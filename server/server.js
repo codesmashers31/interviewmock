@@ -1,7 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import cors from "cors";
-import { config } from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
@@ -14,7 +14,6 @@ import expertRoutes from "./routes/expertRoutes.js";
 import userProfileRoutes from "./routes/userProfileRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 
-config();
 await connectDB();
 // Seeding on startup
 await seedTestSession();

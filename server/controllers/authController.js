@@ -6,7 +6,10 @@ import User from "../models/User.js";
 import Otp from "../models/Otp.js";
 
 // JWT Secret (use environment variable in production)
-const JWT_SECRET = process.env.JWT_SECRET || "your-jwt-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in .env file");
+}
 
 // Send OTP
 export const sendOtp = async (req, res) => {
@@ -30,8 +33,8 @@ export const sendOtp = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "rashikrashik660@gmail.com",
-        pass: "nhgx elec arjb ljwn"
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
       },
     });
 
