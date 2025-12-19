@@ -20,6 +20,7 @@ import Navigation from "./Navigation";
 import BottomNav from "./BottomNav";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
+import axios from '../lib/axios';
 
 type Session = {
   id: number;
@@ -67,13 +68,8 @@ const MySessions = () => {
           return;
         }
 
-        const res = await fetch(`/api/sessions/candidate/${candidateId}`);
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
-        const data = await res.json();
+        const res = await axios.get(`/api/sessions/candidate/${candidateId}`);
+        const data = res.data;
 
         if (!Array.isArray(data)) {
           console.error("Invalid response format:", data);
@@ -139,15 +135,11 @@ const MySessions = () => {
   const handleJoinMeeting = async (session: any) => {
     const candidateId = user?.id || "";
     try {
-      const res = await fetch(`/api/sessions/${session.sessionId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: candidateId })
-      });
+      const res = await axios.post(`/api/sessions/${session.sessionId}/join`, { userId: candidateId });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok && data.permitted) {
+      if (res.status === 200 && data.permitted) {
         navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate&userId=${candidateId}`);
       } else {
         toast.error(data.message || "Cannot join session at this time.");

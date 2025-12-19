@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Save, Upload } from "lucide-react";
-import axios from "axios";
+import axios from '../../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { Country, State, City } from "country-state-city";

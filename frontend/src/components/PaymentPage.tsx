@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Calendar, Clock, Video, Download } from "lucide-react";
-import axios from "axios";
+import axios from '../lib/axios';
 import { useAuth } from "../context/AuthContext";
 
 interface CardDetails {

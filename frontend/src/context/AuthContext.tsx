@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import axios from '../lib/axios';
 
-axios.defaults.baseURL = API_BASE_URL;
 
 export interface User {
   id?: string;

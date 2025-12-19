@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Save, Plus, X, Code, Heart, Globe } from "lucide-react";
-import axios from "axios";
+import axios from '../../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
@@ -11,7 +11,7 @@ interface SkillsSectionProps {
             soft?: string[];
             languages?: string[];
         };
-    };
+    } | null;
     onUpdate: () => void;
 }
 

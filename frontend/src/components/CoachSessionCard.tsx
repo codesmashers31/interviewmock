@@ -14,14 +14,11 @@ import {
   BarChart3,
   DollarSign,
   Brain,
-  Heart,
-  Award,
-  Mail,
   Calendar,
   CheckCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from '../lib/axios';
 
 // Types
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
@@ -71,7 +68,6 @@ const getCategoryIcon = (category: Category) => {
 
 // Profile Card Component
 const ProfileCard = ({ profile }: { profile: Profile }) => {
-  const [liked, setLiked] = useState(false);
   const navigate = useNavigate();
 
   const handleBookNow = () => {

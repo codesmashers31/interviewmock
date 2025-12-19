@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Save, Plus, Trash2, Briefcase } from "lucide-react";
-import axios from "axios";
+import axios from '../../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
@@ -16,7 +16,7 @@ interface Experience {
 interface ExperienceSectionProps {
     profileData: {
         experience?: Experience[];
-    };
+    } | null;
     onUpdate: () => void;
 }
 

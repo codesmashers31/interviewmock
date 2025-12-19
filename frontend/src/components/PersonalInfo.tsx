@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../lib/axios';
 import { toast } from "sonner";
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
 import { useAuth } from '../context/AuthContext';

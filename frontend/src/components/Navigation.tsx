@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Link, useLocation } from "react-router-dom";
+import axios from '../lib/axios';
 import {
   Search,
   Bell,
@@ -45,10 +46,10 @@ const Navigation = () => {
     const fetchProfileImage = async () => {
       if (user?.id) {
         try {
-          const response = await fetch('/api/user/profile', {
+          const response = await axios.get('/api/user/profile', {
             headers: { userid: user.id }
           });
-          const data = await response.json();
+          const data = response.data;
           if (data.success && data.data.profileImage) {
             setProfileImage(data.data.profileImage);
           }

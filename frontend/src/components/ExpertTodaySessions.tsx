@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Card, PrimaryButton } from '../pages/ExpertDashboard'
 import { toast } from "sonner"
+import axios from '../lib/axios';
 
 
 
@@ -28,12 +29,8 @@ const ExpertTodaySessions = () => {
 
   const handleHostMeeting = async (s: any) => {
     try {
-      const response = await fetch('/meeting/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expertId: '123' }) // Replace with real expert ID
-      });
-      const data = await response.json();
+      const response = await axios.post('/meeting/create', { expertId: '123' });
+      const data = response.data;
       if (data.success) {
         navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert`);
       } else {

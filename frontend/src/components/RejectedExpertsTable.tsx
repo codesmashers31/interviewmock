@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from '../lib/axios';
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { toast } from "sonner";
 

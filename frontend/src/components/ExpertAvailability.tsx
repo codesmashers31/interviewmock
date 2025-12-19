@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from '../lib/axios';
 import { toast } from "sonner";
 import { Card, IconButton, PrimaryButton, SecondaryButton } from '../pages/ExpertDashboard';
 

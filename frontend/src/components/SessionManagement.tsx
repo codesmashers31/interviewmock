@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import axios from '../lib/axios';
 import { ChevronLeft, ChevronRight, Search, RefreshCw, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 

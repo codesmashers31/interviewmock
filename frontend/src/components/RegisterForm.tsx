@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import axios from "axios";
+import axios from '../lib/axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Separator } from "./ui/separator";
 import { useAuth } from "../context/AuthContext";
@@ -212,8 +212,8 @@ export const RegisterForm = () => {
               {step === "email"
                 ? "Join thousands of professionals"
                 : step === "otp"
-                ? `Enter verification code sent to ${formData.email}`
-                : "Add your personal details"}
+                  ? `Enter verification code sent to ${formData.email}`
+                  : "Add your personal details"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

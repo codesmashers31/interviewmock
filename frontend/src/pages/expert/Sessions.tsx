@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext";
+import axios from '../../lib/axios';
 import { toast } from "sonner";
 
 export default function Sessions() {
@@ -17,8 +18,8 @@ export default function Sessions() {
 
     useEffect(() => {
         // Fetch sessions for this specific expert ID
-        fetch(`/api/sessions/user/${currentUserId}/role/expert`)
-            .then(res => res.json())
+        axios.get(`/api/sessions/user/${currentUserId}/role/expert`)
+            .then(res => res.data)
             .then(data => {
                 if (Array.isArray(data)) {
                     setSessions(data);
@@ -32,15 +33,11 @@ export default function Sessions() {
     const handleJoin = async (session: any) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/sessions/${session.sessionId}/join`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId })
-            });
+            const res = await axios.post(`/api/sessions/${session.sessionId}/join`, { userId: currentUserId });
 
-            const data = await res.json();
+            const data = res.data;
 
-            if (res.ok && data.permitted) {
+            if (res.status === 200 && data.permitted) {
                 navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert&userId=${currentUserId}`);
             } else {
                 toast.error(data.message || "Cannot join session at this time.");

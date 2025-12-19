@@ -1,6 +1,6 @@
 import { useState, ChangeEvent } from "react";
 import { Save, DollarSign, Clock, MapPin, Briefcase } from "lucide-react";
-import axios from "axios";
+import axios from '../../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
@@ -12,7 +12,7 @@ interface PreferencesSectionProps {
             noticePeriod?: string;
             willingToRelocate?: boolean;
         };
-    };
+    } | null;
     onUpdate: () => void;
 }
 

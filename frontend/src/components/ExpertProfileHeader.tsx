@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import axios from '../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { Card, SecondaryButton } from "../pages/ExpertDashboard";

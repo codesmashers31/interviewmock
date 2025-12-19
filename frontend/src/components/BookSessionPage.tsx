@@ -1,6 +1,6 @@
 import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from '../lib/axios';
 import {
   Star, MapPin, Clock, BookOpen, Users, Award,
   Calendar, CheckCircle, CreditCard, Shield, Video,

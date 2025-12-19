@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { User, Phone, MapPin, Calendar, Briefcase, Award, Settings2 } from "lucide-react";
-import axios from "axios";
+import axios from '../lib/axios';
 import { useAuth } from "../context/AuthContext";
 import Navigation from "../components/Navigation";
 import PersonalInfoSection from "../components/profile/PersonalInfoSection";
@@ -24,7 +24,11 @@ interface ProfileData {
     };
     education?: any[];
     experience?: any[];
-    skills?: any[];
+    skills?: {
+        technical?: string[];
+        soft?: string[];
+        languages?: string[];
+    };
     preferences?: any;
 }
 

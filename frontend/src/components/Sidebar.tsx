@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Heart, Star, MapPin, Phone, Sparkles, Edit3, Zap } from "lucide-react";
-import axios from "axios";
+import axios from '../lib/axios';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
