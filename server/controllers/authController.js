@@ -40,14 +40,14 @@ export const sendOtp = async (req, res) => {
 
     // Mail options
     const mailOptions = {
-      from: '"MockI Support" <mocki@gmail.com>',
+      from: '"BenchMock Support" <benchmock@gmail.com>',
       to: email,
-      subject: "Your One-Time Password (OTP) - MockI",
+      subject: "Your One-Time Password (OTP) - BenchMock",
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-          <h2 style="color: #4CAF50;">MockI Verification</h2>
+          <h2 style="color: #4CAF50;">BenchMock Verification</h2>
           <p>Dear User,</p>
-          <p>Thank you for using <strong>MockI</strong>. Please use the OTP below to complete your verification:</p>
+          <p>Thank you for using <strong>BenchMock</strong>. Please use the OTP below to complete your verification:</p>
           
           <p style="font-size: 20px; font-weight: bold; color: #d32f2f; letter-spacing: 2px;">
             ${otp}
@@ -55,7 +55,7 @@ export const sendOtp = async (req, res) => {
           
           <p>This OTP will expire in <strong>5 minutes</strong>. Do not share it with anyone for security reasons.</p>
           
-          <p style="margin-top: 20px;">Best regards,<br/>The MockI Team</p>
+          <p style="margin-top: 20px;">Best regards,<br/>The BenchMock Team</p>
         </div>
       `,
     };
