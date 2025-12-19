@@ -44,4 +44,16 @@ app.use("/api/user", userProfileRoutes);
 app.use("/api/sessions", sessionRoutes);
 
 const PORT = process.env.PORT || 5000;
+
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') {
+  // Serve static files from the client/dist directory
+  app.use(express.static(path.join(process.cwd(), '../client/dist')));
+
+  // Handle SPA routing: serve index.html for any unknown routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(process.cwd(), '../client/dist/index.html'));
+  });
+}
+
 httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
