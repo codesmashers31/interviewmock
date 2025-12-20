@@ -21,6 +21,7 @@ import BottomNav from "./BottomNav";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import axios from '../lib/axios';
+import { getProfileImageUrl } from "../lib/imageUtils";
 
 type Session = {
   id: number;
@@ -466,13 +467,11 @@ const MySessions = () => {
                     <div className="flex items-center gap-4">
                       {session.profileImage ? (
                         <img
-                          src={session.profileImage}
+                          src={getProfileImageUrl(session.profileImage)}
                           alt={session.expert}
                           className="w-14 h-14 rounded-lg object-cover border-2 border-white/30 shadow-md"
                           onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
+                            e.currentTarget.src = getProfileImageUrl(null);
                           }}
                         />
                       ) : null}

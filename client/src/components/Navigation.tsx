@@ -21,6 +21,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { getProfileImageUrl } from "../lib/imageUtils";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,7 +52,7 @@ const Navigation = () => {
           });
           const data = response.data;
           if (data.success && data.data.profileImage) {
-            setProfileImage(data.data.profileImage);
+            setProfileImage(getProfileImageUrl(data.data.profileImage));
           }
         } catch (error) {
           console.error('Error fetching profile image:', error);
@@ -471,11 +472,12 @@ const Navigation = () => {
                   >
                     <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm overflow-hidden">
                       <img
-                        src={profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user.name || user.email
-                        )}&background=374151&color=fff&bold=true`}
+                        src={profileImage || getProfileImageUrl(null)}
                         alt="profile"
                         className="w-10 h-10 rounded-xl object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = getProfileImageUrl(null);
+                        }}
                       />
                     </div>
                     <div className="flex flex-col items-start">
@@ -499,11 +501,12 @@ const Navigation = () => {
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm overflow-hidden">
                             <img
-                              src={profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                user.name || user.email
-                              )}&background=374151&color=fff&bold=true`}
+                              src={profileImage || getProfileImageUrl(null)}
                               alt="profile"
                               className="w-12 h-12 rounded-xl object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = getProfileImageUrl(null);
+                              }}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -667,11 +670,12 @@ const Navigation = () => {
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm">
                       <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user.name || user.email
-                        )}&background=374151&color=fff&bold=true`}
+                        src={getProfileImageUrl(user.profileImage)}
                         alt="profile"
                         className="w-11 h-11 rounded-xl"
+                        onError={(e) => {
+                          e.currentTarget.src = getProfileImageUrl(null);
+                        }}
                       />
                     </div>
                     <div>

@@ -4,6 +4,7 @@ import axios from '../../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { Country, State, City } from "country-state-city";
+import { getProfileImageUrl } from "../../lib/imageUtils";
 
 interface PersonalInfo {
     phone?: string;
@@ -146,9 +147,12 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
                 <label className="block text-sm font-medium text-gray-700 mb-3">Profile Image</label>
                 <div className="flex items-center gap-4">
                     <img
-                        src={profileData?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.name || "User")}&background=374151&color=fff&bold=true`}
+                        src={getProfileImageUrl(profileData?.profileImage)}
                         alt="Profile"
                         className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                        onError={(e) => {
+                            e.currentTarget.src = getProfileImageUrl(null);
+                        }}
                     />
                     <label className="cursor-pointer">
                         <input

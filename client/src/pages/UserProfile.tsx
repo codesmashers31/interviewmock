@@ -9,6 +9,8 @@ import ExperienceSection from "../components/profile/ExperienceSection";
 import SkillsSection from "../components/profile/SkillsSection";
 import PreferencesSection from "../components/profile/PreferencesSection";
 
+import { getProfileImageUrl } from "../lib/imageUtils";
+
 interface ProfileData {
     name?: string;
     email?: string;
@@ -128,9 +130,12 @@ export default function UserProfile() {
                                     <div className="flex justify-center mb-4">
                                         <div className="relative">
                                             <img
-                                                src={profileData?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.name || "User")}&background=374151&color=fff&bold=true`}
+                                                src={getProfileImageUrl(profileData?.profileImage)}
                                                 alt="Profile"
                                                 className="w-24 h-24 rounded-full border-4 border-white object-cover shadow-lg"
+                                                onError={(e) => {
+                                                    e.currentTarget.src = getProfileImageUrl(null);
+                                                }}
                                             />
                                             <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
                                         </div>

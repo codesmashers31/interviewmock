@@ -1,8 +1,9 @@
 // src/components/TopNav.tsx
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
 import { useAuth } from "../context/AuthContext";
+import { getProfileImageUrl } from "../lib/imageUtils";
 
 interface Notification {
   id: string;
@@ -168,7 +169,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     }
   };
 
-  const avatarSrc = avatarUrl || "./mocki_log.png";
+  const avatarSrc = getProfileImageUrl(avatarUrl || user?.profileImage);
 
   return (
     <header className="w-full bg-white border-b border-gray-200 p-3 flex items-center justify-between sticky top-0 z-50">
@@ -299,7 +300,14 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
             aria-haspopup="true"
             aria-expanded={isProfileOpen}
           >
-            <img src={avatarSrc} alt={`${user?.name ?? "User"} avatar`} className="w-8 h-8 rounded-full border border-gray-200 object-cover" />
+            <img
+              src={avatarSrc}
+              alt={`${user?.name ?? "User"} avatar`}
+              className="w-8 h-8 rounded-full border border-gray-200 object-cover"
+              onError={(e) => {
+                e.currentTarget.src = getProfileImageUrl(null);
+              }}
+            />
             <div className="hidden sm:block text-sm text-left">
               <div className="font-medium text-gray-900">{user?.name ?? user?.email ?? "Guest"}</div>
               <div className="text-xs text-gray-500">{user?.userType ?? ""}</div>

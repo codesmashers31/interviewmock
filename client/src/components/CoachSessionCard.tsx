@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
+import { getProfileImageUrl } from "../lib/imageUtils";
 
 // Types
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
@@ -92,6 +93,9 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
                 src={profile.avatar}
                 alt={profile.name}
                 className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = getProfileImageUrl(null);
+                }}
               />
             </div>
             {profile.isVerified && (
@@ -620,8 +624,8 @@ export default function CoachSessionCard() {
               price: price,
               category: category as Category,
               company: company,
-              avatar: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
-              logo: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
+              avatar: getProfileImageUrl(expert.profileImage),
+              logo: getProfileImageUrl(expert.profileImage),
               location: location,
               mode: mode,
               reviews: reviews,

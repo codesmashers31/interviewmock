@@ -3,6 +3,7 @@
 import {
     Code, Users, Briefcase, PenTool, BarChart3, DollarSign, Brain
 } from "lucide-react";
+import { getProfileImageUrl } from "./imageUtils";
 
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
 
@@ -161,7 +162,7 @@ export const mapExpertToProfile = (expert: any): Profile => {
     const successRate = expert.metrics?.totalSessions > 0 ? Math.round((expert.metrics.completedSessions / expert.metrics.totalSessions) * 100) : 0;
     const responseTime = expert.metrics?.avgResponseTime > 0 ? `${Math.round(expert.metrics.avgResponseTime)} hours` : 'New expert';
     const industry = expert.professionalDetails?.industry || category;
-    const avatar = expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random";
+    const avatar = getProfileImageUrl(expert.profileImage);
 
     return {
         id: expert._id || expert.userId,

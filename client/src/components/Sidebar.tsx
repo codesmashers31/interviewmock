@@ -3,6 +3,7 @@ import { Heart, Star, MapPin, Phone, Sparkles, Edit3, Zap } from "lucide-react";
 import axios from '../lib/axios';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getProfileImageUrl } from "../lib/imageUtils";
 
 const Sidebar = () => {
   const { user } = useAuth();
@@ -54,9 +55,12 @@ const Sidebar = () => {
             <div className="relative z-10 flex justify-center mb-4">
               <div className="relative">
                 <img
-                  src={profileData.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.name || user?.name || "User")}&background=374151&color=fff&bold=true`}
+                  src={getProfileImageUrl(profileData.profileImage)}
                   alt={profileData.name}
                   className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-xl"
+                  onError={(e) => {
+                    e.currentTarget.src = getProfileImageUrl(null);
+                  }}
                 />
                 <div className="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-3 border-white"></div>
               </div>

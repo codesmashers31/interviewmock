@@ -308,14 +308,19 @@ export const saveProfileImage = async (req, res) => {
 
         // Delete old image if exists
         if (user.profileImage) {
-            const oldImagePath = user.profileImage.replace("http://localhost:3000/", "");
+            // Remove 'http://localhost:3000' if it exists (legacy), otherwise just use the path
+            const oldImagePath = user.profileImage.startsWith('http')
+                ? user.profileImage.replace("http://localhost:3000/", "")
+                : user.profileImage.substring(1); // remove leading slash
+
             if (fs.existsSync(oldImagePath)) {
                 fs.unlinkSync(oldImagePath);
             }
         }
 
         // Save new image URL
-        user.profileImage = `http://localhost:3000/uploads/userProfileImages/${req.file.filename}`;
+        // Save new image URL (relative path)
+        user.profileImage = `/uploads/userProfileImages/${req.file.filename}`;
         user.profileCompletion = calculateProfileCompletion(user);
 
         await user.save();

@@ -171,10 +171,8 @@ export const uploadProfilePhoto = async (req, res) => {
 
     if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded. Use field 'photo'." });
 
-    // build accessible URL (use host from request)
-    const protocol = req.protocol || "http";
-    const host = req.get("host") || `localhost:${process.env.PORT || 3000}`;
-    const photoUrl = `${protocol}://${host}/uploads/profileImages/${req.file.filename}`;
+    // Save relative path to be portable across environments
+    const photoUrl = `/uploads/profileImages/${req.file.filename}`;
 
 
     // find expert
@@ -182,7 +180,23 @@ export const uploadProfilePhoto = async (req, res) => {
 
     const expert = await ExpertDetails.findOne({ userId: queryUserId });
     if (!expert) {
+      // Clean up uploaded file if expert not found
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: "Expert profile not found. Create personal info first." });
+    }
+
+    // Delete old image if it exists and is a local file
+    if (expert.profileImage && expert.profileImage.includes('/uploads/')) {
+      // Extract filename from URL/path
+      const oldFilename = expert.profileImage.split('/').pop();
+      const oldTxPath = path.join(uploadDir, oldFilename);
+      if (fs.existsSync(oldTxPath)) {
+        try {
+          fs.unlinkSync(oldTxPath);
+        } catch (err) {
+          console.error("Failed to delete old image:", err);
+        }
+      }
     }
 
     expert.profileImage = photoUrl;
