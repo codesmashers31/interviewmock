@@ -35,7 +35,7 @@ export function VideoTile({
     } else if (!stream) {
 
     }
-  }, [stream, name]);
+  }, [stream, name, cameraEnabled]);
 
   // Generate a unique gradient based on the name
   const getGradient = (name: string) => {

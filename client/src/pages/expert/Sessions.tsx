@@ -38,7 +38,12 @@ export default function Sessions() {
             const data = res.data;
 
             if (res.status === 200 && data.permitted) {
-                navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert&userId=${currentUserId}`);
+                navigate(`/live-meeting?meetingId=${data.meetingId}`, {
+                    state: {
+                        role: 'expert',
+                        meetingId: data.meetingId // Redundant but useful for state completeness
+                    }
+                });
             } else {
                 toast.error(data.message || "Cannot join session at this time.");
             }

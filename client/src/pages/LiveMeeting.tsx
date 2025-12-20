@@ -7,18 +7,38 @@ import { toast } from "sonner";
 import { useWebRTC } from '../meeting/hooks/useWebRTC';
 import { useSignaling } from '../meeting/hooks/useSignaling';
 import { VideoTile } from './meeting/VideoTile';
+import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 export default function LiveMeeting() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  
   const [status, setStatus] = useState("Connecting...");
   const [isBothReady, setIsBothReady] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const hasOfferedRef = useRef(false);
 
   const meetingId = searchParams.get('meetingId') || '';
-  const role = (searchParams.get('role') as 'expert' | 'candidate') || 'candidate';
-  const userId = searchParams.get('userId') || '';
+  
+  // Securely get role from state (fallback to null implies unauthorized entry or refresh)
+  // Securely get role from state (fallback to null implies unauthorized entry or refresh)
+  const stateRole = (location.state as { role?: 'expert' | 'candidate' })?.role;
+  const role = stateRole || 'candidate'; // Default to satisfy TS, but we redirect if stateRole is missing
+  const userId = user?.id || '';
+
+  useEffect(() => {
+    // If we lost state (e.g. refresh), we might want to redirect or handle it.
+    // tailored to USER request: "hide and secure".
+    if (!stateRole || !userId) {
+       // Optional: Could fetch role from backend using meetingId if we wanted to support refresh.
+       // For now, redirect to safety.
+       toast.error("Invalid session state. Please join from the dashboard.");
+       navigate(user?.userType === 'expert' ? '/dashboard/sessions' : '/my-sessions');
+    }
+  }, [stateRole, userId, navigate, user]);
 
   // Ref to break circular dependency between hooks
   const sendIceCandidateRef = useRef<((candidate: RTCIceCandidateInit) => void) | null>(null);
@@ -103,7 +123,7 @@ export default function LiveMeeting() {
       toast.info("Meeting has been ended by the host.");
       cleanup();
       navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
-      navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
+      // navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
     },
     isMediaReady: !!localStream
   });

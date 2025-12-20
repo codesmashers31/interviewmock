@@ -140,7 +140,12 @@ const MySessions = () => {
       const data = res.data;
 
       if (res.status === 200 && data.permitted) {
-        navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate&userId=${candidateId}`);
+        navigate(`/live-meeting?meetingId=${data.meetingId}`, {
+          state: {
+            role: 'candidate',
+            meetingId: data.meetingId
+          }
+        });
       } else {
         toast.error(data.message || "Cannot join session at this time.");
       }
