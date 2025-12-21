@@ -10,9 +10,9 @@ import {
     updateExperience,
     updateSkills,
     updatePreferences,
-    uploadProfileImage,
     saveProfileImage
 } from "../controllers/userProfileController.js";
+import { uploadUserProfile } from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -35,6 +35,6 @@ router.put("/profile/skills", updateSkills);
 router.put("/profile/preferences", updatePreferences);
 
 // Upload profile image
-router.post("/profile/image", uploadProfileImage, saveProfileImage);
+router.post("/profile/image", uploadUserProfile.single("profileImage"), saveProfileImage);
 
 export default router;

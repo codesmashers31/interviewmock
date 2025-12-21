@@ -11,6 +11,24 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in .env file");
 }
 
+// Create reusable transporter object using the default SMTP transport
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Verify connection configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP connection error:", error);
+  } else {
+    console.log("SMTP connection ready");
+  }
+});
+
 // Send OTP
 export const sendOtp = async (req, res) => {
   const { email } = req.body;
@@ -29,42 +47,94 @@ export const sendOtp = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // Configure transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-    });
 
     // Mail options
     const mailOptions = {
-      from: '"BenchMock Support" <benchmock@gmail.com>',
+      from: '"BenchMock Support" <infobenchmock@gmail.com>',
       to: email,
       subject: "Your One-Time Password (OTP) - BenchMock",
       html: `
-        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-          <h2 style="color: #4CAF50;">BenchMock Verification</h2>
-          <p>Dear User,</p>
-          <p>Thank you for using <strong>BenchMock</strong>. Please use the OTP below to complete your verification:</p>
-          
-          <p style="font-size: 20px; font-weight: bold; color: #d32f2f; letter-spacing: 2px;">
-            ${otp}
-          </p>
-          
-          <p>This OTP will expire in <strong>5 minutes</strong>. Do not share it with anyone for security reasons.</p>
-          
-          <p style="margin-top: 20px;">Best regards,<br/>The BenchMock Team</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verification Code</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8;">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%; background-color: #f4f6f8;">
+            <tr>
+              <td align="center" style="padding: 40px 0;">
+                <!-- Logo Area -->
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin-bottom: 20px;">
+                  <tr>
+                    <td align="center">
+                      <h2 style="color: #2d3748; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">BenchMock</h2>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Main Card -->
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                  <!-- Header Stripe -->
+                  <tr>
+                    <td style="background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%); height: 6px;"></td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px 40px 30px 40px; text-align: center;">
+                      <h1 style="color: #1a202c; font-size: 24px; font-weight: 700; margin: 0 0 16px 0;">Authentication Required</h1>
+                      <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+                        Please use the following One-Time Password (OTP) to complete your login securely.
+                      </p>
+
+                      <!-- OTP Box -->
+                      <div style="background-color: #f7fafc; border: 2px dashed #cbd5e0; border-radius: 8px; padding: 24px; margin-bottom: 32px; display: inline-block; min-width: 200px;">
+                        <span style="font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 36px; font-weight: 700; color: #2d3748; letter-spacing: 8px;">${otp}</span>
+                      </div>
+
+                      <p style="color: #718096; font-size: 14px; margin: 0;">
+                        This code is valid for <strong>5 minutes</strong>.<br>
+                        Do not share this code with anyone.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Divider -->
+                  <tr>
+                    <td style="border-top: 1px solid #edf2f7;"></td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding: 24px; background-color: #f8fafc; text-align: center;">
+                      <p style="color: #718096; font-size: 12px; margin: 0 0 8px 0;">
+                        If you didn't request this email, you can safely ignore it.
+                      </p>
+                      <p style="color: #a0aec0; font-size: 12px; margin: 0;">
+                        &copy; ${new Date().getFullYear()} BenchMock. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    // Send email asynchronously (non-blocking)
+    transporter.sendMail(mailOptions).catch(err => {
+      console.error("Error sending email in background:", err);
+    });
+
     res.json({ message: "OTP sent successfully!" });
   } catch (error) {
-    console.error("Error sending OTP:", error);
-    res.status(500).json({ message: "Error sending OTP", error: error.message });
+    console.error("Error processing OTP request:", error);
+    res.status(500).json({ message: "Error processing OTP request", error: error.message });
   }
 };
 

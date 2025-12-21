@@ -13,8 +13,12 @@ export const getProfileImageUrl = (path?: string | null): string => {
 
     // If it's already a full URL (including UI avatars or external links), return it
     if (path.startsWith('http')) {
-        // If it's one of our uploaded images (contains /uploads/), rebase it to current API_BASE_URL
-        // This fixes port mismatches (3000 vs 5000) and domain mismatches (render vs localhost)
+        // Cloudinary or external URLs should be returned as-is
+        if (path.includes('cloudinary.com') || path.includes('ui-avatars.com')) {
+            return path;
+        }
+
+        // Legacy local uploads (if any exist) might need rebasing, but usually not needed for Cloudinary
         if (path.includes('/uploads/')) {
             const relativePath = path.substring(path.indexOf('/uploads/'));
             return `${API_BASE_URL}${relativePath}`;

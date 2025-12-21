@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { getFileUrl } from "../middleware/upload.js";
 
 /* ----------------- Profile Completion Calculator ------------------ */
 function calculateProfileCompletion(user) {
@@ -254,39 +255,7 @@ export const updatePreferences = async (req, res) => {
     }
 };
 
-/* ----------------- Upload Profile Image ------------------ */
-// Configure multer for profile image uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = "uploads/userProfileImages";
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${Math.floor(Math.random() * 1000000000)}${path.extname(file.originalname)}`;
-        cb(null, uniqueName);
-    }
-});
-
-const upload = multer({
-    storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-            cb(null, true);
-        } else {
-            cb(new Error("Only image files are allowed"));
-        }
-    }
-});
-
-export const uploadProfileImage = upload.single("profileImage");
+// Multer setup removed - reusing middleware/uploadCloudinary.js in routes
 
 export const saveProfileImage = async (req, res) => {
     try {
@@ -306,21 +275,12 @@ export const saveProfileImage = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        // Delete old image if exists
-        if (user.profileImage) {
-            // Remove 'http://localhost:3000' if it exists (legacy), otherwise just use the path
-            const oldImagePath = user.profileImage.startsWith('http')
-                ? user.profileImage.replace("http://localhost:3000/", "")
-                : user.profileImage.substring(1); // remove leading slash
+        // (Optional) We could delete the old image from Cloudinary here using the public_id
+        // For now, we just overwrite the URL in the database
 
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlinkSync(oldImagePath);
-            }
-        }
 
         // Save new image URL
-        // Save new image URL (relative path)
-        user.profileImage = `/uploads/userProfileImages/${req.file.filename}`;
+        user.profileImage = getFileUrl(req, req.file);
         user.profileCompletion = calculateProfileCompletion(user);
 
         await user.save();

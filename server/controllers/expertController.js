@@ -4,6 +4,7 @@ import fs from "fs";
 import multer from "multer";
 import mongoose from "mongoose";
 import ExpertDetails from "../models/expertModel.js"; // adjust if file name differs
+import { getFileUrl } from "../middleware/upload.js";
 
 /* -------------------- Helpers -------------------- */
 const resolveUserIdFromReq = (req) => {
@@ -132,36 +133,7 @@ const computeCompletion = (expert) => {
   return Math.min(score, 100);
 };
 
-/* -------------------- multer for uploads -------------------- */
-const uploadDir = path.join(process.cwd(), "uploads", "profileImages");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename(req, file, cb) {
-    const ext = path.extname(file.originalname) || ".jpg";
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, name);
-  },
-});
-export const uploadMiddleware = multer({ storage });
-
-const verificationUploadDir = path.join(process.cwd(), "uploads", "verification");
-if (!fs.existsSync(verificationUploadDir)) fs.mkdirSync(verificationUploadDir, { recursive: true });
-
-const verificationStorage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, verificationUploadDir);
-  },
-  filename(req, file, cb) {
-    const ext = path.extname(file.originalname) || ".pdf";
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}-verification${ext}`;
-    cb(null, name);
-  },
-});
-export const uploadVerificationMiddleware = multer({ storage: verificationStorage });
+// Multer setup removed - reusing middleware/uploadCloudinary.js in routes
 
 /* -------------------- uploadProfilePhoto -------------------- */
 export const uploadProfilePhoto = async (req, res) => {
@@ -171,34 +143,22 @@ export const uploadProfilePhoto = async (req, res) => {
 
     if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded. Use field 'photo'." });
 
-    // Save relative path to be portable across environments
-    const photoUrl = `/uploads/profileImages/${req.file.filename}`;
-
+    // Cloudinary returns the secure URL, Local returns absolute path. 
+    // Use helper to standardize.
+    const photoUrl = getFileUrl(req, req.file);
 
     // find expert
     const queryUserId = toObjectId(userIdRaw);
 
     const expert = await ExpertDetails.findOne({ userId: queryUserId });
     if (!expert) {
-      // Clean up uploaded file if expert not found
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      // If using Cloudinary, we might want to delete the uploaded image if expert not found, 
+      // but typically we just fail fast. Ideally check expert existence before upload, 
+      // but multer runs first.
       return res.status(404).json({ success: false, message: "Expert profile not found. Create personal info first." });
     }
 
-    // Delete old image if it exists and is a local file
-    if (expert.profileImage && expert.profileImage.includes('/uploads/')) {
-      // Extract filename from URL/path
-      const oldFilename = expert.profileImage.split('/').pop();
-      const oldTxPath = path.join(uploadDir, oldFilename);
-      if (fs.existsSync(oldTxPath)) {
-        try {
-          fs.unlinkSync(oldTxPath);
-        } catch (err) {
-          console.error("Failed to delete old image:", err);
-        }
-      }
-    }
-
+    // Update image URL
     expert.profileImage = photoUrl;
     await expert.save();
 
@@ -258,35 +218,34 @@ export const uploadVerificationDocs = async (req, res) => {
     const protocol = req.protocol || "http";
     const host = req.get("host") || `localhost:${process.env.PORT || 3000}`;
 
-    // Handle uploaded files
+    // Handle uploaded files (Cloudinary)
     if (req.files) {
       if (req.files.companyIdFile && req.files.companyIdFile[0]) {
         expert.verification.companyId = {
-          url: `${protocol}://${host}/uploads/verification/${req.files.companyIdFile[0].filename}`,
+          url: getFileUrl(req, req.files.companyIdFile[0]),
           name: req.files.companyIdFile[0].originalname
         };
       }
       if (req.files.aadharFile && req.files.aadharFile[0]) {
         expert.verification.aadhar = {
-          url: `${protocol}://${host}/uploads/verification/${req.files.aadharFile[0].filename}`,
+          url: getFileUrl(req, req.files.aadharFile[0]),
           name: req.files.aadharFile[0].originalname
         };
       }
+
+      // Handle linkedin URL
+      if (req.body.linkedin) {
+        expert.verification.linkedin = req.body.linkedin;
+      }
+
+      await expert.save();
+
+      return res.json({
+        success: true,
+        message: 'Verification details updated',
+        verification: expert.verification
+      });
     }
-
-    // Handle linkedin URL
-    if (req.body.linkedin) {
-      expert.verification.linkedin = req.body.linkedin;
-    }
-
-    await expert.save();
-
-    return res.json({
-      success: true,
-      message: 'Verification details updated',
-      verification: expert.verification
-    });
-
   } catch (err) {
     console.error("uploadVerificationDocs error:", err);
     return res.status(500).json({ success: false, message: err.message || "Internal server error" });

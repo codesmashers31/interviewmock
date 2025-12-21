@@ -17,8 +17,7 @@ import {
   updateAvailability,
   deleteBreakDate,
   deleteWeeklySlot,
-  uploadVerificationDocs,
-  uploadVerificationMiddleware, getExpertProfileImage,
+  uploadVerificationDocs, getExpertProfileImage,
   getAllExperts,
   getVerifiedExperts,
   getPendingExperts,
@@ -30,7 +29,7 @@ import {
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
-import { uploadMiddleware } from "../middleware/upload.js";
+import { uploadProfile, uploadVerification } from "../middleware/upload.js";
 
 
 const router = express.Router();
@@ -49,7 +48,7 @@ router.use(authenticateToken);
 // Profile
 router.get("/profile", getExpertProfile);
 router.get("/admin/profile/:id", getExpertById);
-router.post("/profile/photo", uploadMiddleware.single("photo"), uploadProfilePhoto);
+router.post("/profile/photo", uploadProfile.single("photo"), uploadProfilePhoto);
 router.get("/profile/image", getExpertProfileImage);
 
 // The rest of your expert routes (implementations must exist in controller)
@@ -76,7 +75,7 @@ router.post("/resubmit", resubmitProfile);
 // Verification
 router.put(
   "/verification",
-  uploadVerificationMiddleware.fields([
+  uploadVerification.fields([
     { name: "companyIdFile", maxCount: 1 },
     { name: "aadharFile", maxCount: 1 },
   ]),
