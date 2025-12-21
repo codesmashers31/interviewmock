@@ -3,42 +3,65 @@ import mongoose from "mongoose";
 /* ----------------- Review Schema ------------------ */
 const reviewSchema = new mongoose.Schema(
     {
-        expertId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "ExpertDetails",
+        // We use String to match the Session.js schema which uses String UUIDs/IDs
+        sessionId: {
+            type: String,
             required: true,
             index: true
         },
-        userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+        expertId: {
+            type: String, // Storing as String to match Session.expertId
             required: true
         },
-        sessionId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Session",
+        candidateId: {
+            type: String, // Storing as String to match Session.candidateId
             required: true
         },
-        rating: {
+
+        // Ratings
+        overallRating: {
             type: Number,
             required: true,
             min: 1,
             max: 5
         },
-        comment: {
+        technicalRating: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: 0
+        },
+        communicationRating: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: 0
+        },
+
+        // Qualitative Feedback
+        feedback: {
             type: String,
             trim: true,
-            maxlength: 1000
+            maxlength: 2000
         },
+        strengths: {
+            type: [String],
+            default: []
+        },
+        weaknesses: {
+            type: [String],
+            default: [] // Areas for improvement
+        },
+
         isVisible: {
             type: Boolean,
-            default: true // Admin can hide inappropriate reviews
+            default: true
         }
     },
     { timestamps: true }
 );
 
-// Index for faster queries
-reviewSchema.index({ expertId: 1, createdAt: -1 });
+// Compound index to prevent duplicate reviews for the same session
+reviewSchema.index({ sessionId: 1 }, { unique: true });
 
 export default mongoose.model("Review", reviewSchema);

@@ -221,3 +221,85 @@ export const getAllSessions = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+/* -------------------- Submit Review -------------------- */
+/* -------------------- Submit Review -------------------- */
+export const submitReview = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { overallRating, technicalRating, communicationRating, feedback, strengths, weaknesses, expertId, candidateId } = req.body;
+
+        // Validation
+        if (!sessionId || !overallRating) {
+            return res.status(400).json({ success: false, message: "Missing required fields" });
+        }
+
+        // Dynamically import models and services
+        const Review = (await import('../models/reviewModel.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const sessionService = (await import('../services/sessionService.js'));
+        const emailService = (await import('../services/emailService.js'));
+
+        // Check if review already exists
+        const existingReview = await Review.findOne({ sessionId });
+        if (existingReview) {
+            return res.status(400).json({ success: false, message: "Review already submitted for this session" });
+        }
+
+        const newReview = new Review({
+            sessionId,
+            expertId,      // Passed from frontend
+            candidateId,   // Passed from frontend
+            overallRating,
+            technicalRating: technicalRating || 0,
+            communicationRating: communicationRating || 0,
+            feedback,
+            strengths: strengths || [],
+            weaknesses: weaknesses || []
+        });
+
+        await newReview.save();
+
+        // Update Session status
+        const session = await sessionService.getSessionById(sessionId);
+        if (session) {
+            session.status = 'completed'; // Ensure it's marked completed
+            await session.save();
+
+            // --- SEND EMAIL NOTIFICATION ---
+            try {
+                // Fetch candidate email and expert name
+                // Expert ID passed might be string or userId, let's try to get a name
+                let expertName = "An Expert";
+                // If expertId is passed, maybe we can fetch details? 
+                // For now, let's use a generic name or the one from session if available
+
+                // Fetch Candidate Email
+                let candidateEmail = null;
+                if (candidateId.includes('@')) {
+                    candidateEmail = candidateId;
+                } else {
+                    const candidate = await User.findById(candidateId);
+                    if (candidate) candidateEmail = candidate.email;
+                }
+
+                if (candidateEmail) {
+                    await emailService.notifyReviewReceived(
+                        expertName,
+                        candidateEmail,
+                        session.topics?.[0] || "Mock Interview",
+                        { overallRating, technicalRating, communicationRating, feedback }
+                    );
+                }
+            } catch (emailErr) {
+                console.error("Failed to send review email:", emailErr);
+                // Don't fail the request if email fails
+            }
+        }
+
+        res.status(201).json({ success: true, message: "Review submitted successfully", data: newReview });
+    } catch (error) {
+        console.error("Submit Review Error:", error);
+        res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+};

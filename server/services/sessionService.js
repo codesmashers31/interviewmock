@@ -4,11 +4,56 @@ import User from '../models/User.js';
 export const getSessionsForUser = async (userId, role) => {
     // Strict query based on role
     const query = role === 'expert' ? { expertId: userId } : { candidateId: userId };
-    // Only return Upcoming or Confirmed sessions (active ones)
-    return await Session.find({
+
+    // 1. Fetch raw sessions
+    const sessions = await Session.find({
         ...query,
-        status: { $in: ['upcoming', 'confirmed', 'live'] }
-    }).sort({ startTime: 1 });
+        // Show all relevant statuses so history is visible too
+        status: { $in: ['upcoming', 'confirmed', 'live', 'completed', 'cancelled'] }
+    }).sort({ startTime: -1 }).lean();
+
+    // 2. Enrich with Candidate Details (for Experts) or Expert Details (for Candidates)
+    const enrichedSessions = await Promise.all(sessions.map(async (session) => {
+        try {
+            // IF viewer is expert, get Candidate info
+            if (role === 'expert' && session.candidateId) {
+                // Try to find user by ID (assuming candidateId is a User _id)
+                // If standard UUIDs are used for test sessions, this might fail gracefully
+                let candidate = null;
+                try {
+                    candidate = await User.findById(session.candidateId).select('name email personalInfo education experience skills profileImage');
+                } catch (e) {
+                    // If candidateId is not a valid ObjectId, try email lookup if it looks like email
+                    if (session.candidateId.includes('@')) {
+                        candidate = await User.findOne({ email: session.candidateId }).select('name email personalInfo education experience skills profileImage');
+                    }
+                }
+
+                if (candidate) {
+                    return {
+                        ...session,
+                        candidateName: candidate.name,
+                        candidateDetails: {
+                            email: candidate.email,
+                            phone: candidate.personalInfo?.phone,
+                            location: `${candidate.personalInfo?.city || ''}, ${candidate.personalInfo?.country || ''}`,
+                            education: candidate.education || [],
+                            experience: candidate.experience || [],
+                            skills: [...(candidate.skills?.technical || []), ...(candidate.skills?.soft || [])],
+                            profileImage: candidate.profileImage
+                        }
+                    };
+                }
+            }
+            // Add other enrichments if needed
+            return session;
+        } catch (err) {
+            console.error(`Error enriching session ${session.sessionId}:`, err);
+            return session;
+        }
+    }));
+
+    return enrichedSessions;
 };
 
 export const createRestrictedTestSession = async (expertEmail, candidateEmail, customStartTime, customEndTime) => {
