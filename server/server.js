@@ -2,10 +2,12 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
 import { seedTestSession } from "./services/sessionService.js";
+import { initScheduler } from "./services/schedulerService.js";
 import attachSignaling from "./websocket/signaling.js";
 
 import connectDB from "./config/db.js";
@@ -13,10 +15,13 @@ import authRoutes from "./routes/authRoutes.js";
 import expertRoutes from "./routes/expertRoutes.js";
 import userProfileRoutes from "./routes/userProfileRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 await connectDB();
 // Seeding on startup
 await seedTestSession();
+initScheduler();
 
 const app = express();
 const httpServer = createServer(app);
@@ -30,7 +35,11 @@ const io = new Server(httpServer, {
 attachSignaling(io);
 
 // Middleware
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 
 // serve uploaded images (dev)
@@ -42,6 +51,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/expert", expertRoutes);
 app.use("/api/user", userProfileRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 

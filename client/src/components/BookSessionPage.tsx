@@ -129,32 +129,46 @@ const BookSessionPage = () => {
   }
 
   // Reviews
-  const reviews = [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      role: "Senior Developer",
-      rating: 5,
-      comment: "Exceptional feedback that helped me land my dream job. The technical questions were spot-on.",
-      date: "2 days ago"
-    },
-    {
-      id: 2,
-      name: "Sarah Williams",
-      role: "Product Manager",
-      rating: 5,
-      comment: "The mock interview was incredibly realistic. Great insights on communication skills.",
-      date: "1 week ago"
-    },
-    {
-      id: 3,
-      name: "Michael Chen",
-      role: "UX Designer",
-      rating: 4,
-      comment: "Very professional session. The feedback was detailed and actionable.",
-      date: "2 weeks ago"
+  interface Review {
+    id: string;
+    name: string;
+    role: string;
+    rating: number;
+    comment: string;
+    date: string;
+    avatar?: string;
+    strengths?: string[];
+  }
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  useEffect(() => {
+    if (expertId) {
+      const fetchReviews = async () => {
+        try {
+          setReviewsLoading(true);
+          const response = await axios.get(`/api/reviews/expert/${expertId}`);
+          if (response.data.success) {
+            // Format existing date if needed, though controller returns ISO string usually.
+            // Let's rely on the controller or format it here.
+            // Controller returns `createdAt` as `date`.
+            // We can format it to relative time here or just use locale string.
+            const formattedReviews = response.data.data.map((r: any) => ({
+              ...r,
+              date: new Date(r.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })
+            }));
+            setReviews(formattedReviews);
+          }
+        } catch (error) {
+          console.error("Failed to fetch reviews", error);
+        } finally {
+          setReviewsLoading(false);
+        }
+      };
+      fetchReviews();
     }
-  ];
+  }, [expertId]);
 
   // Dates for next 7 days
   const dates = Array.from({ length: 7 }, (_, i) => {
@@ -860,39 +874,68 @@ const BookSessionPage = () => {
                       </div>
                       {/* Reviews List */}
                       <div className="space-y-6">
-                        {reviews.map(review => (
-                          <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
-                            <div className="flex items-start gap-4">
-                              <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                                {review.name.charAt(0)}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
-                                  <div>
-                                    <h4 className="font-semibold text-gray-800">{review.name}</h4>
-                                    <p className="text-gray-600 text-sm">{review.role}</p>
+                        {reviewsLoading ? (
+                          <div className="text-center py-10">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                            <p className="text-gray-500 mt-2">Loading reviews...</p>
+                          </div>
+                        ) : reviews.length > 0 ? (
+                          reviews.map(review => (
+                            <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
+                              <div className="flex items-start gap-4">
+                                {review.avatar ? (
+                                  <img src={review.avatar} alt={review.name} className="w-12 h-12 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                                    {review.name.charAt(0)}
                                   </div>
-                                  <span className="text-sm text-gray-500 mt-1 sm:mt-0">{review.date}</span>
-                                </div>
-                                <div className="flex items-center gap-1 mb-3">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
-                                    />
-                                  ))}
-                                </div>
-                                <p className="text-gray-700 leading-relaxed">{review.comment}</p>
-                                <div className="flex items-center gap-4 mt-4">
-                                  <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-                                    <ThumbsUp className="w-4 h-4" />
-                                    Helpful
-                                  </button>
+                                )}
+                                <div className="flex-1">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                                    <div>
+                                      <h4 className="font-semibold text-gray-800">{review.name}</h4>
+                                      <p className="text-gray-600 text-sm">{review.role}</p>
+                                    </div>
+                                    <span className="text-sm text-gray-500 mt-1 sm:mt-0">{review.date}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 mb-3">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+
+                                  {review.strengths && review.strengths.length > 0 && (
+                                    <div className="mt-3">
+                                      <p className="text-xs font-semibold text-green-600">Strengths:</p>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {review.strengths.map((s, idx) => (
+                                          <span key={idx} className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100">{s}</span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center gap-4 mt-4">
+                                    <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                                      <ThumbsUp className="w-4 h-4" />
+                                      Helpful
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <h4 className="text-lg font-medium text-gray-600">No reviews yet</h4>
+                            <p className="text-gray-500">Be the first to review this expert after your session!</p>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   )}

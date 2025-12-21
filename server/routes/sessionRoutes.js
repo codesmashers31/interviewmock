@@ -18,6 +18,7 @@ router.get('/:sessionId', sessionController.getSession);
 router.get('/candidate/:candidateId', sessionController.getSessionsByCandidate);
 router.get('/expert/:expertId', sessionController.getSessionsByExpert);
 router.post('/seed', sessionController.seedSession);
+router.get('/:sessionId/reviews', sessionController.getSessionReviews);
 router.post('/:sessionId/review', sessionController.submitReview);
 router.post('/', sessionController.createSession);
 

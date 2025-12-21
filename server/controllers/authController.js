@@ -7,6 +7,8 @@ import Otp from "../models/Otp.js";
 
 // JWT Secret (use environment variable in production)
 const JWT_SECRET = process.env.JWT_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "fallback-refresh-secret"; // Add this to env
+
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in .env file");
 }
@@ -215,8 +217,8 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
+    // Generate Access Token (15 min)
+    const accessToken = jwt.sign(
       {
         email: user.email,
         userType: user.userType,
@@ -224,12 +226,27 @@ export const loginUser = async (req, res) => {
         userId: user._id
       },
       JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "15m" }
     );
+
+    // Generate Refresh Token (7 days)
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Send Refresh Token as HttpOnly Cookie
+    res.cookie('jwt', refreshToken, {
+      httpOnly: true, // accessible only by web server
+      secure: process.env.NODE_ENV === 'production', // https only
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // cross-site cookie
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.json({
       message: "Login successful",
-      token,
+      accessToken, // Send access token to client
       user: {
         email: user.email,
         userType: user.userType,
@@ -241,6 +258,49 @@ export const loginUser = async (req, res) => {
     console.error("Error logging in:", error);
     res.status(500).json({ message: "Error logging in", error: error.message });
   }
+};
+
+// Refresh Token
+export const refresh = async (req, res) => {
+  const cookies = req.cookies;
+
+  if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' });
+
+  const refreshToken = cookies.jwt;
+
+  try {
+    const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    // Find user
+    const user = await User.findById(decoded.userId);
+
+    if (!user) return res.status(401).json({ message: 'Unauthorized' });
+
+    // Generate new Access Token
+    const accessToken = jwt.sign(
+      {
+        email: user.email,
+        userType: user.userType,
+        name: user.name,
+        userId: user._id
+      },
+      JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    res.json({ accessToken });
+
+  } catch (err) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+};
+
+// Logout User
+export const logoutUser = (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.jwt) return res.sendStatus(204); // No content
+  res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
+  res.json({ message: 'Cookie cleared' });
 };
 
 // Middleware to verify JWT token

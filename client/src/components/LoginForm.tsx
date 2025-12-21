@@ -1,15 +1,18 @@
 // src/components/LoginForm.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import axios from '../lib/axios';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
-import { Separator } from "./ui/separator";
+
+import Beams from "./Beams";
 import { useAuth } from "../context/AuthContext";
 
 export const LoginForm = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +31,13 @@ export const LoginForm = () => {
     setError("");
     if (!formData.email || !formData.password) {
       setError("Please fill in all fields");
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
       return;
     }
 
@@ -55,18 +65,21 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-neutral-950 overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <Beams />
+      </div>
+      <div className="relative z-10 w-full max-w-md p-4">
         <div className="text-center mb-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-300">
             New here?{" "}
-            <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
+            <Link to="/signup" className="font-medium text-blue-400 hover:text-blue-300 hover:underline">
               Create an account
             </Link>
           </p>
         </div>
 
-        <Card className="w-full shadow-lg border-none bg-white">
+        <Card className="w-full shadow-xl border-none bg-white">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold text-gray-900">Sign in to your account</CardTitle>
             <CardDescription className="text-gray-500 text-sm mt-1">
@@ -103,17 +116,30 @@ export const LoginForm = () => {
                 <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-1 block">
                   Password
                 </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full h-11 border border-gray-200 rounded-lg px-3 text-gray-800 bg-gray-50 focus:outline-none focus:border-gray-300"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full h-11 border border-gray-200 rounded-lg pl-3 pr-10 text-gray-800 bg-gray-50 focus:outline-none focus:border-gray-300"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-end">
@@ -151,15 +177,6 @@ export const LoginForm = () => {
                 </svg>
                 Continue with Google
               </Button>
-            </div>
-
-            <Separator />
-
-            <div className="text-center text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
-              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
-                Sign up
-              </Link>
             </div>
           </CardContent>
         </Card>

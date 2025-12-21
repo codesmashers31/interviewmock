@@ -19,6 +19,7 @@ import SkillsPage from "./pages/expert/Skills";
 import LiveMeeting from "./pages/LiveMeeting";
 import ScrollToTop from "./ScrollToTop";
 import UserProfile from "./pages/UserProfile";
+import Notifications from "./pages/Notifications";
 
 
 
@@ -64,6 +65,7 @@ function AppRoutes() {
         <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
         <Route path="/live-meeting" element={<ProtectedRoute><LiveMeeting /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
         {/* ---------------- EXPERT DASHBOARD ---------------- */}
         <Route

@@ -1,7 +1,7 @@
 // src/pages/expert/Sessions.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, CheckCircle, Eye, Calendar, Clock, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, X, Star, Timer as TimerIcon, Loader2 } from 'lucide-react';
+import { Video, CheckCircle, Eye, Clock, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, X, Star, Timer as TimerIcon, Loader2 } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext";
 import axios from '../../lib/axios';
 import { toast } from "sonner";
@@ -146,7 +146,8 @@ export default function Sessions() {
                 strengths: reviewForm.strengths.split(',').map(s => s.trim()).filter(Boolean),
                 weaknesses: reviewForm.weaknesses.split(',').map(s => s.trim()).filter(Boolean),
                 expertId: currentUserId,
-                candidateId: reviewSession.candidateId // Send raw ID, backend knows format
+                candidateId: reviewSession.candidateId, // Send raw ID, backend knows format
+                reviewerRole: 'expert'
             };
 
             const res = await axios.post(`/api/sessions/${reviewSession.sessionId}/review`, payload);
@@ -303,8 +304,8 @@ export default function Sessions() {
                                                 <div className="flex items-center text-sm text-gray-500 gap-4 mt-2">
                                                     <div className="flex items-center gap-1.5">
                                                         <Clock className="w-4 h-4" />
-                                                        {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
-                                                        {new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })} -
+                                                        {new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                                                     </div>
                                                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold ${timer.color}`}>
                                                         <TimerIcon className="w-3 h-3" />
@@ -319,8 +320,8 @@ export default function Sessions() {
                                                     onClick={() => canReview ? setReviewSession(session) : toast.error("Wait for session to end")}
                                                     disabled={!canReview}
                                                     className={`p-2 rounded-lg transition-colors tooltip ${canReview
-                                                            ? 'text-gray-500 hover:text-green-600 hover:bg-green-50 cursor-pointer'
-                                                            : 'text-gray-300 cursor-not-allowed bg-gray-50'
+                                                        ? 'text-gray-500 hover:text-green-600 hover:bg-green-50 cursor-pointer'
+                                                        : 'text-gray-300 cursor-not-allowed bg-gray-50'
                                                         }`}
                                                     title={canReview ? "Mark as Reviewed" : "Wait for session to end"}
                                                 >
@@ -351,8 +352,8 @@ export default function Sessions() {
                                             onClick={() => handleJoin(session)}
                                             disabled={!isSessionActive(session) || loading}
                                             className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all shadow-sm ${isSessionActive(session)
-                                                    ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md transform hover:-translate-y-0.5'
-                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md transform hover:-translate-y-0.5'
+                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                 }`}
                                         >
                                             <Video className="w-4 h-4" />
@@ -372,8 +373,8 @@ export default function Sessions() {
                                                 onClick={() => canReview ? setReviewSession(session) : toast.error("Wait for session to end")}
                                                 disabled={!canReview}
                                                 className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm border transition-colors ${canReview
-                                                        ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200'
-                                                        : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
+                                                    ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200'
+                                                    : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
                                                     }`}
                                             >
                                                 <CheckCircle className="w-4 h-4" />
@@ -424,8 +425,8 @@ export default function Sessions() {
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
                                     className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-gray-600 hover:bg-gray-50'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-gray-600 hover:bg-gray-50'
                                         }`}
                                 >
                                     {page}

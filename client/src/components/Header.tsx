@@ -1,6 +1,7 @@
 import React from 'react';
-import { Menu, Bell, Search, LogOut } from 'lucide-react';
+import { Menu, Search, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import NotificationDropdown from './NotificationDropdown';
 
 interface HeaderProps {
   setSidebarOpen: (open: boolean) => void;
@@ -35,10 +36,9 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
         </div>
 
         <div className="flex items-center space-x-4">
+
           {/* Notifications */}
-          <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-            <Bell className="w-6 h-6" />
-          </button>
+          <NotificationDropdown />
 
           {/* User menu */}
           <div className="flex items-center space-x-3">
@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
               <p className="text-sm font-medium text-gray-900">{user?.name}</p>
               <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
-            
+
             <button
               onClick={logout}
               className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors"

@@ -84,8 +84,20 @@ export const getSessionsByCandidate = async (req, res) => {
 
                 }
 
+                // Match Review - Expert's review for this session
+                const Review = (await import('../models/reviewModel.js')).default;
+                const expertReview = await Review.findOne({ sessionId: session.sessionId, reviewerRole: 'expert' });
+
                 return {
                     ...session.toObject(),
+                    expertReview: expertReview ? {
+                        overallRating: expertReview.overallRating,
+                        technicalRating: expertReview.technicalRating,
+                        communicationRating: expertReview.communicationRating,
+                        strengths: expertReview.strengths,
+                        weaknesses: expertReview.weaknesses,
+                        feedback: expertReview.feedback
+                    } : null,
                     expertDetails: expert ? {
                         name: expert.personalInformation?.userName || 'Unknown Expert',
                         role: expert.professionalDetails?.title || 'Expert',
@@ -227,10 +239,10 @@ export const getAllSessions = async (req, res) => {
 export const submitReview = async (req, res) => {
     try {
         const { sessionId } = req.params;
-        const { overallRating, technicalRating, communicationRating, feedback, strengths, weaknesses, expertId, candidateId } = req.body;
+        const { overallRating, technicalRating, communicationRating, feedback, strengths, weaknesses, expertId, candidateId, reviewerRole } = req.body;
 
         // Validation
-        if (!sessionId || !overallRating) {
+        if (!sessionId || !overallRating || !reviewerRole) {
             return res.status(400).json({ success: false, message: "Missing required fields" });
         }
 
@@ -240,8 +252,8 @@ export const submitReview = async (req, res) => {
         const sessionService = (await import('../services/sessionService.js'));
         const emailService = (await import('../services/emailService.js'));
 
-        // Check if review already exists
-        const existingReview = await Review.findOne({ sessionId });
+        // Check if review already exists for this role
+        const existingReview = await Review.findOne({ sessionId, reviewerRole });
         if (existingReview) {
             return res.status(400).json({ success: false, message: "Review already submitted for this session" });
         }
@@ -250,6 +262,7 @@ export const submitReview = async (req, res) => {
             sessionId,
             expertId,      // Passed from frontend
             candidateId,   // Passed from frontend
+            reviewerRole,
             overallRating,
             technicalRating: technicalRating || 0,
             communicationRating: communicationRating || 0,
@@ -263,37 +276,63 @@ export const submitReview = async (req, res) => {
         // Update Session status
         const session = await sessionService.getSessionById(sessionId);
         if (session) {
-            session.status = 'completed'; // Ensure it's marked completed
-            await session.save();
+            if (session.status !== 'completed') {
+                session.status = 'completed'; // Ensure it's marked completed
+                await session.save();
+            }
 
             // --- SEND EMAIL NOTIFICATION ---
-            try {
-                // Fetch candidate email and expert name
-                // Expert ID passed might be string or userId, let's try to get a name
-                let expertName = "An Expert";
-                // If expertId is passed, maybe we can fetch details? 
-                // For now, let's use a generic name or the one from session if available
+            // Only send notification to candidate if expert reviewed
+            if (reviewerRole === 'expert') {
+                try {
+                    // Fetch Candidate Email
+                    let candidateEmail = null;
+                    let candidateUserId = null; // We need this for notification
 
-                // Fetch Candidate Email
-                let candidateEmail = null;
-                if (candidateId.includes('@')) {
-                    candidateEmail = candidateId;
-                } else {
-                    const candidate = await User.findById(candidateId);
-                    if (candidate) candidateEmail = candidate.email;
-                }
+                    if (candidateId.includes('@')) {
+                        candidateEmail = candidateId;
+                        // If candidateId is email, we can't create in-app notification reliably unless we find User
+                        const user = await User.findOne({ email: candidateId });
+                        if (user) candidateUserId = user._id;
+                    } else {
+                        const candidate = await User.findById(candidateId);
+                        if (candidate) {
+                            candidateEmail = candidate.email;
+                            candidateUserId = candidate._id;
+                        }
+                    }
 
-                if (candidateEmail) {
-                    await emailService.notifyReviewReceived(
-                        expertName,
-                        candidateEmail,
-                        session.topics?.[0] || "Mock Interview",
-                        { overallRating, technicalRating, communicationRating, feedback }
-                    );
+                    if (candidateEmail) {
+                        // Expert name
+                        let expertName = "An Expert";
+                        // attempt to find expert name if possible or leave generic
+
+                        await emailService.notifyReviewReceived(
+                            expertName,
+                            candidateEmail,
+                            session.topics?.[0] || "Mock Interview",
+                            { overallRating, technicalRating, communicationRating, feedback }
+                        );
+                    }
+
+                    // --- CREATE IN-APP NOTIFICATION ---
+                    if (candidateUserId) {
+                        const { createNotification } = await import('../controllers/notificationController.js');
+                        await createNotification({
+                            userId: candidateUserId,
+                            type: 'review_received',
+                            title: 'New Feedback Received',
+                            message: `Your expert has submitted feedback for the session on ${session.topics?.[0] || 'Mock Interview'}. Rating: ${overallRating}/5.`,
+                            metadata: {
+                                sessionId: sessionId,
+                                link: `/my-sessions` // Simplify link for now
+                            }
+                        });
+                    }
+
+                } catch (emailErr) {
+                    console.error("Failed to send review email/notification:", emailErr);
                 }
-            } catch (emailErr) {
-                console.error("Failed to send review email:", emailErr);
-                // Don't fail the request if email fails
             }
         }
 
@@ -301,5 +340,30 @@ export const submitReview = async (req, res) => {
     } catch (error) {
         console.error("Submit Review Error:", error);
         res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+};
+
+/* -------------------- Get Session Reviews -------------------- */
+export const getSessionReviews = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        const Review = (await import('../models/reviewModel.js')).default;
+
+        const reviews = await Review.find({ sessionId });
+
+        const expertReview = reviews.find(r => r.reviewerRole === 'expert') || null;
+        const candidateReview = reviews.find(r => r.reviewerRole === 'candidate') || null;
+
+        res.json({
+            success: true,
+            data: {
+                expertReview,
+                candidateReview
+            }
+        });
+    } catch (error) {
+        console.error("Get Reviews Error:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };

@@ -32,46 +32,74 @@ interface Props { children: ReactNode; }
 
 export const AuthProvider: React.FC<Props> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Attach token to axios defaults if present
   useEffect(() => {
-    if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    else delete axios.defaults.headers.common['Authorization'];
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
   }, [token]);
+
+  // Refresh Token Function
+  const refreshAccessToken = async () => {
+    try {
+      const response = await axios.get('/api/auth/refresh');
+      const { accessToken } = response.data;
+      setToken(accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      return accessToken;
+    } catch (error) {
+      setToken(null);
+      setUser(null);
+      throw error;
+    }
+  };
 
   // Global axios response interceptor — handle 401
   useEffect(() => {
     const id = axios.interceptors.response.use(
-      res => res,
-      (err) => {
-        if (err?.response?.status === 401) {
-          // token expired/invalid
-          logout();
+      (res) => res,
+      async (err) => {
+        const originalRequest = err.config;
+
+        // If error is 401 and we haven't retried yet
+        if (err.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            const newToken = await refreshAccessToken();
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            return axios(originalRequest);
+          } catch (refreshError) {
+            return Promise.reject(refreshError);
+          }
         }
         return Promise.reject(err);
       }
     );
     return () => axios.interceptors.response.eject(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // On app load: if token exists, fetch profile
+  // Check auth status on app load (Silent Login)
   useEffect(() => {
     const init = async () => {
-      if (token) {
-        try {
-          await fetchProfile();
-        } catch (e) {
-          // fetchProfile handles logout on failure
-        }
+      try {
+        await refreshAccessToken(); // First try to get a fresh token using cookie
+        await fetchProfile(); // Then fetch user profile
+      } catch (e) {
+        // Not logged in or expired
+        setToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // only on mount
+  }, []);
 
   const fetchProfile = async (): Promise<User | null> => {
     try {
@@ -87,21 +115,19 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
       setUser(normalizedUser);
       return normalizedUser;
     } catch (error: any) {
-      if (error?.response?.status === 401) {
-        // invalid token — clear everything
-        logout();
-        return null;
-      }
       console.error('Failed to fetch profile', error);
-      throw error;
+      return null;
     }
   };
 
   const login = async (email: string, password: string): Promise<User> => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
-      const { token: newToken, user: userData } = response.data;
-      if (!newToken || !userData) throw new Error('Invalid response from server');
+      const { accessToken, user: userData } = response.data;
+
+      if (!accessToken || !userData) throw new Error('Invalid response from server');
+
+      setToken(accessToken);
 
       // Normalize userId to id for consistency
       const normalizedUser = {
@@ -109,11 +135,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         id: userData.userId || userData.id,
       };
 
-      localStorage.setItem('token', newToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      setToken(newToken);
       setUser(normalizedUser);
-      setIsLoading(false);
       return normalizedUser;
     } catch (error: any) {
       const msg = error?.response?.data?.message || error?.message || 'Login failed';
@@ -129,12 +151,16 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
-    setIsLoading(false);
+  const logout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      setUser(null);
+      setToken(null);
+      delete axios.defaults.headers.common['Authorization'];
+    }
   };
 
   const value: AuthContextType = { user, token, login, register, logout, isLoading, fetchProfile };

@@ -13,7 +13,9 @@ import {
   Star,
   Filter,
   X,
-  MoreVertical
+  MoreVertical,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import Navigation from "./Navigation";
@@ -22,6 +24,108 @@ import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import axios from '../lib/axios';
 import { getProfileImageUrl } from "../lib/imageUtils";
+
+
+// --- REVIEW DISPLAY MODAL COMPONENT ---
+const ReviewDetailsModal = ({
+  isOpen,
+  onClose,
+  type,
+  data
+}: {
+  isOpen: boolean,
+  onClose: () => void,
+  type: 'expert_feedback' | 'my_review',
+  data: any
+}) => {
+  if (!isOpen || !data) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 h-auto max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
+          <h3 className="font-bold text-gray-900 text-lg">
+            {type === 'expert_feedback' ? 'Feedback from Expert' : 'My Review of Expert'}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-6">
+
+          {/* Ratings Summary */}
+          <div className="grid grid-cols-3 gap-2 bg-gray-50 p-4 rounded-xl">
+            <div className="text-center p-2">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Overall</p>
+              <div className="flex items-center justify-center gap-1 font-bold text-lg text-gray-900">
+                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                {data.overallRating}/5
+              </div>
+            </div>
+            <div className="text-center p-2 border-l border-gray-200">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tech / Skill</p>
+              <div className="font-bold text-lg text-gray-900">{data.technicalRating || '-'}/5</div>
+            </div>
+            <div className="text-center p-2 border-l border-gray-200">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Comm.</p>
+              <div className="font-bold text-lg text-gray-900">{data.communicationRating || '-'}/5</div>
+            </div>
+          </div>
+
+          {/* Strengths */}
+          {data.strengths && data.strengths.length > 0 && (
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600" /> Strengths
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {data.strengths.map((s: string, idx: number) => (
+                  <span key={idx} className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Weaknesses / Improvements */}
+          {data.weaknesses && data.weaknesses.length > 0 && (
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600" /> Areas for Improvement
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {data.weaknesses.map((w: string, idx: number) => (
+                  <span key={idx} className="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-sm">
+                    {w}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Feedback */}
+          {data.feedback && (
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Detailed Feedback</h4>
+              <div className="bg-gray-50 p-4 rounded-lg text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                {data.feedback}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 type Session = {
   id: number;
@@ -43,7 +147,17 @@ type Session = {
   profileImage?: string | null;
   startTime?: string;
   endTime?: string;
-  sessionId?: string;
+
+  sessionId: string;
+  expertId: string; // Added for review submission
+  expertReview?: {
+    overallRating: number;
+    technicalRating: number;
+    communicationRating: number;
+    strengths: string[];
+    weaknesses: string[];
+    feedback: string;
+  } | null;
 };
 
 const MySessions = () => {
@@ -56,7 +170,23 @@ const MySessions = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sessionsPerPage] = useState<number>(6);
   const [showFilters, setShowFilters] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Viewing Review State
+  const [viewReviewData, setViewReviewData] = useState<{ type: 'expert_feedback' | 'my_review', data: any } | null>(null);
+
+  // Review State
+  const [reviewSession, setReviewSession] = useState<Session | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    overallRating: 5,
+    technicalRating: 5, // Mapping to 'Expertise'
+    communicationRating: 5,
+    feedback: "",
+    strengths: "",
+    weaknesses: ""
+  });
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -105,7 +235,7 @@ const MySessions = () => {
             category: expert.category || "General",
             location: "Remote",
             date: startDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
-            time: startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            time: startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
             price: s.price ? `₹${s.price}` : "N/A",
             status: (s.status.charAt(0).toUpperCase() + s.status.slice(1)) as Session["status"],
             meetLink: s.meetLink || "",
@@ -115,9 +245,12 @@ const MySessions = () => {
             expertise: s.topics || ["General"],
             avatarColor: colors[colorIndex],
             profileImage: expert.profileImage,
+            end: s.endTime,
             sessionId: s.sessionId,
+            expertId: s.expertId, // Map expertId
             startTime: s.startTime,
-            endTime: s.endTime
+            endTime: s.endTime,
+            expertReview: s.expertReview // Map expert review for badge
           };
         });
 
@@ -187,7 +320,10 @@ const MySessions = () => {
       };
     }
 
-    if (now > end) {
+    // Allow re-joining for a bit after official end time (e.g., 30 mins buffer)
+    const bufferEnd = new Date(end.getTime() + 30 * 60 * 1000);
+
+    if (now > bufferEnd) {
       return { active: false, reason: "Session Ended" };
     }
 
@@ -195,6 +331,78 @@ const MySessions = () => {
   };
 
   const isSessionActive = (session: any) => getSessionStatusInfo(session).active;
+
+  const handleSubmitReview = async () => {
+    if (!reviewSession) return;
+    setSubmittingReview(true);
+    try {
+      const payload = {
+        overallRating: reviewForm.overallRating,
+        technicalRating: reviewForm.technicalRating,
+        communicationRating: reviewForm.communicationRating,
+        feedback: reviewForm.feedback,
+        strengths: reviewForm.strengths.split(',').map(s => s.trim()).filter(Boolean),
+        weaknesses: reviewForm.weaknesses.split(',').map(s => s.trim()).filter(Boolean),
+        candidateId: user?.id,
+        expertId: reviewSession.expertId,
+        reviewerRole: 'candidate'
+      };
+
+      const res = await axios.post(`/api/sessions/${reviewSession.sessionId}/review`, payload);
+
+      if (res.data.success) {
+        toast.success("Review submitted successfully!");
+        setReviewSession(null);
+        setReviewForm({ // Reset form
+          overallRating: 5,
+          technicalRating: 5,
+          communicationRating: 5,
+          feedback: "",
+          strengths: "",
+          weaknesses: ""
+        });
+        // Update local state to reflect completion
+        setSessions(prev => prev.map(s =>
+          s.sessionId === reviewSession.sessionId ? { ...s, status: 'Completed' } : s
+        ));
+        setFilteredSessions(prev => prev.map(s =>
+          s.sessionId === reviewSession.sessionId ? { ...s, status: 'Completed' } : s
+        ));
+      }
+    } catch (error: any) {
+      console.error("Review Error:", error);
+      toast.error(error.response?.data?.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleFetchReviews = async (session: Session, type: 'expert_feedback' | 'my_review') => {
+    setOpenDropdownId(null);
+    try {
+      const res = await axios.get(`/api/sessions/${session.sessionId}/reviews`);
+      if (res.data.success) {
+        const { expertReview, candidateReview } = res.data.data;
+        const targetData = type === 'expert_feedback' ? expertReview : candidateReview;
+
+        if (!targetData) {
+          toast.info(type === 'expert_feedback' ? "Expert hasn't provided feedback yet." : "You haven't reviewed this session yet.");
+          return;
+        }
+
+        setViewReviewData({ type, data: targetData });
+      }
+    } catch (error) {
+      console.error("Fetch Review Error:", error);
+      toast.error("Failed to fetch reviews");
+    }
+  };
+
+  const isSessionEnded = (session: Session) => {
+    if (!session.endTime) return false;
+    // Check if current time is past end time
+    return new Date() > new Date(session.endTime);
+  };
 
   // Filter sessions based on search and filters
   useEffect(() => {
@@ -501,7 +709,7 @@ const MySessions = () => {
                     </div>
 
                     {/* Countdown Timer for Upcoming Sessions */}
-                    {(session.status === "Upcoming" || session.status === "Confirmed" || session.status === "confirmed") && session.startTime && (
+                    {!isSessionEnded(session) && session.startTime && (
                       <div className="mb-4">
                         <CountdownTimer startTime={session.startTime} />
                       </div>
@@ -512,9 +720,15 @@ const MySessions = () => {
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <span>{session.date}</span>
-                        <span className="text-gray-300">•</span>
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span>{session.time}</span>
+                        {session.startTime && session.endTime ? (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <Clock className="w-4 h-4 text-gray-500" />
+                            <span>
+                              {new Date(session.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })} - {new Date(session.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </span>
+                          </>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <MapPin className="w-4 h-4 text-gray-500" />
@@ -548,7 +762,17 @@ const MySessions = () => {
                     <div className="flex items-center justify-between">
                       <div className="text-xl font-bold text-gray-900">{session.price}</div>
                       <div className="flex gap-2">
-                        {session.status === "Upcoming" || session.status === "Confirmed" || session.status === "confirmed" ? (
+                        {isSessionEnded(session) ? (
+                          <button
+                            onClick={() => {
+                              setReviewSession(session);
+                            }}
+                            className="px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1 border-gray-300 text-gray-700 hover:bg-green-50 hover:text-green-700 hover:border-green-200"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Review
+                          </button>
+                        ) : (
                           <div className="relative group/tooltip">
                             <button
                               onClick={() => handleJoinMeeting(session)}
@@ -567,22 +791,181 @@ const MySessions = () => {
                               </div>
                             )}
                           </div>
-                        ) : (
-                          <button className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-1">
-                            <CheckCircle className="w-4 h-4" />
-                            Review
-                          </button>
                         )}
-                        <button className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
+
+                        {/* 3-Dot Dropdown */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
+                            className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {openDropdownId === session.sessionId && (
+                            <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                              <button
+                                onClick={() => handleFetchReviews(session, 'expert_feedback')}
+                                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                              >
+                                View Expert Feedback
+                              </button>
+                              <button
+                                onClick={() => handleFetchReviews(session, 'my_review')}
+                                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                View My Review
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Click outside listener could be added here or top level */}
+                          {openDropdownId === session.sessionId && (
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Review Badge for Completed Sessions */}
+                    {session.status === "Completed" && session.expertReview && (
+                      <div className={`mt-4 p-3 rounded-lg border flex items-center justify-between ${session.expertReview.overallRating >= 4 ? 'bg-green-50 border-green-200 text-green-800' :
+                        session.expertReview.overallRating >= 3 ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                          'bg-red-50 border-red-200 text-red-800'
+                        }`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">
+                            {session.expertReview.overallRating >= 4 ? '🏆' :
+                              session.expertReview.overallRating >= 3 ? '👍' : '⚠️'}
+                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold">
+                              {session.expertReview.overallRating >= 4 ? 'Excellent' :
+                                session.expertReview.overallRating >= 3 ? 'Good' : 'Needs Work'}
+                            </span>
+                            <span className="text-xs opacity-80">Expert Feedback</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-lg bg-white/50 px-2 py-1 rounded">{session.expertReview.overallRating}/5</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          {/* --- READ-ONLY REVIEW MODAL --- */}
+          <ReviewDetailsModal
+            isOpen={!!viewReviewData}
+            onClose={() => setViewReviewData(null)}
+            type={viewReviewData?.type || 'expert_feedback'}
+            data={viewReviewData?.data}
+          />
+
+          {/* --- REVIEW SESSION MODAL --- */}
+          {reviewSession && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-100 scale-100">
+              <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setReviewSession(null)}></div>
+              <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 h-auto max-h-[90vh] overflow-y-auto">
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
+                  <h3 className="font-bold text-gray-900 text-lg">Rate Your Expert</h3>
+                  <button onClick={() => setReviewSession(null)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-lg">
+                      {reviewSession.expert.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Reviewing Expert</p>
+                      <p className="font-bold text-gray-900">{reviewSession.expert}</p>
+                    </div>
+                  </div>
+
+                  {/* Ratings */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Overall Experience</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setReviewForm(prev => ({ ...prev, overallRating: star }))}
+                            className={`transition-transform hover:scale-110 ${star <= reviewForm.overallRating ? 'text-amber-400' : 'text-gray-300'}`}
+                          >
+                            <Star className="w-8 h-8 fill-current" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Expertise / Knowledge</label>
+                        <input
+                          type="number" min="1" max="5"
+                          value={reviewForm.technicalRating}
+                          onChange={e => setReviewForm(prev => ({ ...prev, technicalRating: parseInt(e.target.value) }))}
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Communication</label>
+                        <input
+                          type="number" min="1" max="5"
+                          value={reviewForm.communicationRating}
+                          onChange={e => setReviewForm(prev => ({ ...prev, communicationRating: parseInt(e.target.value) }))}
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Text Inputs */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">What did you like? (Strengths)</label>
+                    <input
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="Very knowledgeable, Patient..."
+                      value={reviewForm.strengths}
+                      onChange={e => setReviewForm(prev => ({ ...prev, strengths: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Areas for Improvement</label>
+                    <input
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="Could be more structured..."
+                      value={reviewForm.weaknesses}
+                      onChange={e => setReviewForm(prev => ({ ...prev, weaknesses: e.target.value }))}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Feedback</label>
+                    <textarea
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[120px]"
+                      placeholder="Share your experience with this expert..."
+                      value={reviewForm.feedback}
+                      onChange={e => setReviewForm(prev => ({ ...prev, feedback: e.target.value }))}
+                    ></textarea>
+                  </div>
+
+                  <button
+                    className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleSubmitReview}
+                    disabled={submittingReview}
+                  >
+                    {submittingReview && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {submittingReview ? "Submitting..." : "Submit Review"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* Pagination */}
           {filteredSessions.length > sessionsPerPage && (
@@ -650,7 +1033,7 @@ const MySessions = () => {
         </div>
 
         <BottomNav />
-      </div>
+      </div >
       <Footer />
     </>
   );

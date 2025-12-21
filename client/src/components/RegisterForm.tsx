@@ -1,12 +1,15 @@
 // src/components/RegisterForm.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import axios from '../lib/axios';
+import api from '../lib/axios';
+import { isAxiosError } from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Separator } from "./ui/separator";
+import Beams from "./Beams";
 import { useAuth } from "../context/AuthContext";
 import Select from "react-select";
 
@@ -36,6 +39,8 @@ export const RegisterForm = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
@@ -81,7 +86,7 @@ export const RegisterForm = () => {
     setIsLoading(true);
     setError("");
     try {
-      await axios.post("/api/auth/verify-otp", {
+      await api.post("/api/auth/verify-otp", {
         email: formData.email,
         otp: formData.otp
       });
@@ -89,7 +94,7 @@ export const RegisterForm = () => {
       setStep("details");
     } catch (err: unknown) {
       setIsLoading(false);
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         setError(err.response?.data?.message || "Invalid verification code");
       } else if (err instanceof Error) {
         setError(err.message);
@@ -142,13 +147,13 @@ export const RegisterForm = () => {
 
   const sendOtp = async () => {
     try {
-      const response = await axios.post("/api/auth/send-otp", {
+      const response = await api.post("/api/auth/send-otp", {
         email: formData.email,
         userType: formData.userType
       });
       return response.data;
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         throw new Error(err.response?.data?.message || "Failed to send OTP");
       }
       if (err instanceof Error) {
@@ -190,20 +195,23 @@ export const RegisterForm = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-neutral-950 overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <Beams />
+      </div>
+      <div className="relative z-10 w-full max-w-md p-4">
         <div className="text-center mb-6">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-gray-300">
             Already Registered?{" "}
             <Link
               to="/signin"
-              className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+              className="font-medium text-blue-400 hover:text-blue-300 hover:underline"
             >
               Login here
             </Link>
           </p>
         </div>
-        <Card className="w-full shadow-lg border-none bg-white">
+        <Card className="w-full shadow-2xl border-none bg-white">
           <CardHeader className="text-center space-y-1 pb-4">
             <CardTitle className="text-xl font-bold text-slate-900">
               {step === "email" ? "Create your account" : step === "otp" ? "Verify your email" : "Complete your profile"}
@@ -344,43 +352,71 @@ export const RegisterForm = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-slate-700">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={formData.password}
-                    onChange={e => handleInputChange("password", e.target.value)}
-                    className="w-full h-10"
-                    required
-                  />
-                  <p className="text-xs text-slate-500">
-                    Must be at least 6 characters long
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create a password"
+                        value={formData.password}
+                        onChange={e => handleInputChange("password", e.target.value)}
+                        className="w-full h-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Must be at least 6 characters long
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
+                      Confirm Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={formData.confirmPassword}
+                        onChange={e => handleInputChange("confirmPassword", e.target.value)}
+                        className="w-full h-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full h-10 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating account..." : "Create Account"}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
-                    Confirm Password
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={e => handleInputChange("confirmPassword", e.target.value)}
-                    className="w-full h-10"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full h-10 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating account..." : "Create Account"}
-                </Button>
               </form>
             )}
             <Separator />

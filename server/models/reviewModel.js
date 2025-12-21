@@ -53,6 +53,11 @@ const reviewSchema = new mongoose.Schema(
             default: [] // Areas for improvement
         },
 
+        reviewerRole: {
+            type: String,
+            enum: ['expert', 'candidate'],
+            required: true
+        },
         isVisible: {
             type: Boolean,
             default: true
@@ -61,7 +66,7 @@ const reviewSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Compound index to prevent duplicate reviews for the same session
-reviewSchema.index({ sessionId: 1 }, { unique: true });
+// Compound index to prevent duplicate reviews by the same role for the same session
+reviewSchema.index({ sessionId: 1, reviewerRole: 1 }, { unique: true });
 
 export default mongoose.model("Review", reviewSchema);
