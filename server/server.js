@@ -54,7 +54,7 @@ app.use("/api/sessions", sessionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') {

@@ -2,7 +2,9 @@ import nodemailer from 'nodemailer';
 
 // Create reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // true for 465, false for other ports
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -11,14 +13,15 @@ const transporter = nodemailer.createTransport({
 
 export const sendEmail = async ({ to, subject, html }) => {
     try {
+        console.log(`Attempting to send email to: ${to}`);
         const mailOptions = {
-            from: '"BenchMock Support" <infobenchmock@gmail.com>',
+            from: `"BenchMock Support" <${process.env.EMAIL_USER}>`,
             to,
             subject,
             html
         };
-        await transporter.sendMail(mailOptions);
-        console.log(`Email sent to ${to}`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Email sent: ${info.messageId}`);
         return true;
     } catch (error) {
         console.error("Error sending email:", error);

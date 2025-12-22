@@ -313,6 +313,8 @@ export const submitReview = async (req, res) => {
                             session.topics?.[0] || "Mock Interview",
                             { overallRating, technicalRating, communicationRating, feedback }
                         );
+                    } else {
+                        console.warn(`Candidate email not found for ID: ${candidateId}. Review email notification skipped.`);
                     }
 
                     // --- CREATE IN-APP NOTIFICATION ---
