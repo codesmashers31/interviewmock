@@ -68,6 +68,12 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
         // If error is 401 and we haven't retried yet
         if (err.response?.status === 401 && !originalRequest._retry) {
+
+          // IMPORTANT: Prevent infinite loop. If the error comes from the refresh endpoint itself, do NOT retry.
+          if (originalRequest.url?.includes('/auth/refresh')) {
+            return Promise.reject(err);
+          }
+
           originalRequest._retry = true;
 
           try {

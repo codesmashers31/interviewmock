@@ -37,7 +37,7 @@ attachSignaling(io);
 // Middleware
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: ["http://localhost:5173", process.env.CLIENT_URL].filter(Boolean),
   credentials: true,
 }));
 app.use(express.json());
@@ -54,7 +54,7 @@ app.use("/api/sessions", sessionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') {

@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -13,23 +13,7 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in .env file");
 }
 
-// Create reusable transporter object using the default SMTP transport
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Verify connection configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("SMTP connection error:", error);
-  } else {
-    console.log("SMTP connection ready");
-  }
-});
+import { sendEmail } from "../services/emailService.js";
 
 // Send OTP
 export const sendOtp = async (req, res) => {
@@ -50,12 +34,7 @@ export const sendOtp = async (req, res) => {
     );
 
 
-    // Mail options
-    const mailOptions = {
-      from: '"BenchMock Support" <infobenchmock@gmail.com>',
-      to: email,
-      subject: "Your One-Time Password (OTP) - BenchMock",
-      html: `
+    const html = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -125,17 +104,24 @@ export const sendOtp = async (req, res) => {
           </table>
         </body>
         </html>
-      `,
-    };
+    `;
 
-    // Send email asynchronously (non-blocking)
-    transporter.sendMail(mailOptions).catch(err => {
-      console.error("Error sending email in background:", err);
+    // Use shared email service
+    const sent = await sendEmail({
+      to: email,
+      subject: "Your One-Time Password (OTP) - BenchMock",
+      html
     });
 
+    if (!sent) {
+      console.error(`[OTP] Failed to send email to ${email}. emailService returned false.`);
+      throw new Error("Failed to send email via emailService");
+    }
+
+    console.log(`[OTP] Email sent successfully to ${email}`);
     res.json({ message: "OTP sent successfully!" });
   } catch (error) {
-    console.error("Error processing OTP request:", error);
+    console.error("[OTP] Detailed Error:", error);
     res.status(500).json({ message: "Error processing OTP request", error: error.message });
   }
 };
