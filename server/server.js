@@ -32,6 +32,28 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Debug middleware to log origin
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && !allowedOrigins.includes(origin)) {
+    console.log(`[CORS BLOCKED] Origin: ${origin} not in whitelist.`);
+  } else if (origin) {
+    console.log(`[CORS ALLOWED] Origin: ${origin}`);
+  }
+  next();
+});
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+app.use(cookieParser());
+
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
@@ -43,13 +65,6 @@ const io = new Server(httpServer, {
 attachSignaling(io);
 
 // Middleware
-app.use(cookieParser());
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
 app.use(express.json());
 
 // serve uploaded images (dev)
