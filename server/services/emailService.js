@@ -1,33 +1,59 @@
 import nodemailer from 'nodemailer';
 
-// Create reusable transporter object using the default SMTP transport with pooling
-const transporter = nodemailer.createTransport({
-    pool: true, // Use pooled connections
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // true for 465, false for other ports
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    maxConnections: 5, // Limit concurrent connections
-    maxMessages: 100, // Limit messages per connection
-});
+// Configure transporter (Prioritize Resend, fallback to Gmail)
+let transporterConfig;
+
+if (process.env.RESEND_API_KEY) {
+    transporterConfig = {
+        pool: true,
+        host: "smtp.resend.com",
+        port: 465,
+        secure: true,
+        auth: {
+            user: "resend",
+            pass: process.env.RESEND_API_KEY,
+        },
+        maxConnections: 5,
+        maxMessages: 100,
+    };
+    console.log("Email Service: Using Resend SMTP");
+} else {
+    transporterConfig = {
+        pool: true,
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+        maxConnections: 5,
+    };
+    console.log("Email Service: Using Gmail SMTP (Fallback)");
+}
+
+const transporter = nodemailer.createTransport(transporterConfig);
 
 // Verify connection configuration on startup
 transporter.verify(function (error, success) {
     if (error) {
         console.error("Email Service Error: Connection verification failed.", error);
     } else {
-        console.log("Email Service: Ready to send messages");
+        console.log("Email Service: Connected to Resend SMTP");
     }
 });
 
 export const sendEmail = async ({ to, subject, html }) => {
     try {
         console.log(`Attempting to send email to: ${to}`);
+
+        // Use a verified domain if available, otherwise fallback to nice format or let Resend handle it if onboarding
+        // Note: For Resend, if you don't have a domain, you MUST send from "onboarding@resend.dev" to yourself.
+        // In production with a domain, use "noreply@yourdomain.com".
+        const fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
+
         const mailOptions = {
-            from: `"BenchMock Support" <${process.env.EMAIL_USER}>`,
+            from: `"BenchMock Support" <${fromAddress}>`,
             to,
             subject,
             html
