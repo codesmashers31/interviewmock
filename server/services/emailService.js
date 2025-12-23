@@ -1,7 +1,8 @@
 import nodemailer from 'nodemailer';
 
-// Create reusable transporter object using the default SMTP transport
+// Create reusable transporter object using the default SMTP transport with pooling
 const transporter = nodemailer.createTransport({
+    pool: true, // Use pooled connections
     host: "smtp.gmail.com",
     port: 465,
     secure: true, // true for 465, false for other ports
@@ -9,6 +10,17 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    maxConnections: 5, // Limit concurrent connections
+    maxMessages: 100, // Limit messages per connection
+});
+
+// Verify connection configuration on startup
+transporter.verify(function (error, success) {
+    if (error) {
+        console.error("Email Service Error: Connection verification failed.", error);
+    } else {
+        console.log("Email Service: Ready to send messages");
+    }
 });
 
 export const sendEmail = async ({ to, subject, html }) => {
@@ -20,6 +32,8 @@ export const sendEmail = async ({ to, subject, html }) => {
             subject,
             html
         };
+
+        // Asynchronous sending with pooled connections
         const info = await transporter.sendMail(mailOptions);
         console.log(`Email sent: ${info.messageId}`);
         return true;
