@@ -1,36 +1,18 @@
 import nodemailer from 'nodemailer';
 
-// Configure transporter (Prioritize Resend, fallback to Gmail)
-let transporterConfig;
+const transporterConfig = {
+    pool: true,
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+    maxConnections: 5,
+};
 
-if (process.env.RESEND_API_KEY) {
-    transporterConfig = {
-        pool: true,
-        host: "smtp.resend.com",
-        port: 465,
-        secure: true,
-        auth: {
-            user: "resend",
-            pass: process.env.RESEND_API_KEY,
-        },
-        maxConnections: 5,
-        maxMessages: 100,
-    };
-    console.log("Email Service: Using Resend SMTP");
-} else {
-    transporterConfig = {
-        pool: true,
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-        maxConnections: 5,
-    };
-    console.log("Email Service: Using Gmail SMTP (Fallback)");
-}
+console.log("Email Service: Using Gmail SMTP");
 
 const transporter = nodemailer.createTransport(transporterConfig);
 
@@ -39,7 +21,7 @@ transporter.verify(function (error, success) {
     if (error) {
         console.error("Email Service Error: Connection verification failed.", error);
     } else {
-        console.log("Email Service: Connected to Resend SMTP");
+        console.log("Email Service: Connected to Gmail SMTP");
     }
 });
 
@@ -50,7 +32,7 @@ export const sendEmail = async ({ to, subject, html }) => {
         // Use a verified domain if available, otherwise fallback to nice format or let Resend handle it if onboarding
         // Note: For Resend, if you don't have a domain, you MUST send from "onboarding@resend.dev" to yourself.
         // In production with a domain, use "noreply@yourdomain.com".
-        const fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
+        const fromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
         const mailOptions = {
             from: `"BenchMock Support" <${fromAddress}>`,
