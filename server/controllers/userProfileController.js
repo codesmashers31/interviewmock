@@ -77,7 +77,7 @@ export const getUserProfile = async (req, res) => {
 export const updatePersonalInfo = async (req, res) => {
     try {
         const userId = req.headers.userid;
-        const { phone, dateOfBirth, gender, country, state, city, bio } = req.body;
+        const { name, phone, dateOfBirth, gender, country, state, city, bio } = req.body;
 
         if (!userId) {
             return res.status(400).json({ success: false, message: "User ID required" });
@@ -88,6 +88,9 @@ export const updatePersonalInfo = async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        // Update name if provided
+        if (name) user.name = name;
 
         // Update personal info
         user.personalInfo = {

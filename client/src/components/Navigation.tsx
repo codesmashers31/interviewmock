@@ -217,7 +217,7 @@ const Navigation = () => {
       {/* Changed padding logic to prevent overflow */}
       <nav
         ref={menuRef}
-        className={`bg-white border-b border-gray-200/80 sticky top-0 z-50 backdrop-blur-lg transition-all duration-300 w-full ${scrolled ? "py-2 shadow-lg" : "py-3 shadow-sm"
+        className={`bg-white border-b border-blue-100/50 sticky top-0 z-50 backdrop-blur-lg transition-all duration-300 w-full ${scrolled ? "py-2 shadow-lg shadow-blue-900/5" : "py-3 shadow-sm"
           }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -226,48 +226,36 @@ const Navigation = () => {
             <div className="flex items-center space-x-4 lg:space-x-8">
               <Link
                 to="/"
-                className="flex items-center space-x-2 lg:space-x-3 group min-w-max"
+                className="flex items-center space-x-2 group min-w-max"
                 onClick={closeAllDropdowns}
               >
-                <div className="flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 bg-gray-900 rounded-xl group-hover:bg-gray-800 transition-colors duration-300 shadow-lg">
-                  <Briefcase className="text-white w-4 h-4 lg:w-5 lg:h-5" />
+                <div className="flex items-center justify-center w-8 h-8 lg:w-9 lg:h-9 bg-blue-50/50 rounded-lg group-hover:bg-blue-100 transition-colors duration-300">
+                  <Briefcase className="text-[#004fcb] w-5 h-5" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg lg:text-xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <span className="text-lg lg:text-xl font-semibold text-[#002a6b] tracking-tight">
                     BenchMock
                   </span>
-                  <span className="text-[10px] lg:text-xs text-gray-500 -mt-0.5 lg:-mt-1">Your Effort Matters!</span>
                 </div>
               </Link>
 
               <div className="hidden md:flex space-x-1">
                 {navItems.map((item) => {
-                  // Active if path matches exactly OR starts with href (if not home)
                   const isActive = location.pathname === item.href || (location.pathname.startsWith(item.href) && item.href !== "/");
 
                   return (
                     <Link
                       key={item.name}
                       to={item.href}
-                      className={`flex items-center px-3 py-2 text-sm font-bold transition-all duration-200 rounded-lg group relative whitespace-nowrap ${isActive ? "text-[#004fcb]" : "text-gray-700 hover:text-[#004fcb] hover:bg-blue-50/80"
+                      className={`flex items-center px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg group relative whitespace-nowrap ${isActive ? "text-[#004fcb] bg-blue-50" : "text-slate-600 hover:text-[#004fcb] hover:bg-blue-50/50"
                         }`}
                       onClick={closeAllDropdowns}
                     >
-                      <span className={`mr-2 transition-colors hidden xl:inline ${isActive ? "text-[#004fcb]" : "text-gray-500 group-hover:text-[#004fcb]"
+                      <span className={`mr-2 transition-colors hidden xl:inline ${isActive ? "text-[#004fcb]" : "text-slate-400 group-hover:text-[#004fcb]"
                         }`}>
                         {item.icon}
                       </span>
                       {item.name}
-
-                      {/* Active Line (Custom Blue) - Persistent when active */}
-                      {isActive && (
-                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#004fcb] transition-all duration-300"></div>
-                      )}
-
-                      {/* Hover Line (Custom Blue) - Animate in when hovering inactive items */}
-                      {!isActive && (
-                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#004fcb] transition-all duration-300 w-0 group-hover:w-full"></div>
-                      )}
                     </Link>
                   );
                 })}
@@ -280,7 +268,7 @@ const Navigation = () => {
               <div ref={searchRef} className={`relative transition-all duration-300 ${isSearchOpen ? "w-48 lg:w-72" : "w-10 lg:w-12"}`}>
                 <button
                   onClick={toggleSearch}
-                  className={`absolute right-0 top-1/2 transform -translate-y-1/2 p-2 lg:p-2.5 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 z-10 ${isSearchOpen ? "bg-gray-50 text-gray-700" : ""
+                  className={`absolute right-0 top-1/2 transform -translate-y-1/2 p-2 lg:p-2.5 text-slate-500 hover:text-[#004fcb] rounded-lg hover:bg-blue-50 transition-all duration-200 z-10 ${isSearchOpen ? "bg-transparent text-slate-700" : ""
                     }`}
                 >
                   <Search size={18} />
@@ -296,7 +284,7 @@ const Navigation = () => {
                       placeholder="Search..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-4 pr-10 lg:pr-12 py-2 lg:py-2.5 text-sm rounded-xl border border-gray-300 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-gray-400 transition-all duration-300"
+                      className="w-full pl-4 pr-10 lg:pr-12 py-2 lg:py-2 text-sm rounded-lg border border-blue-100 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all duration-300 font-normal"
                     />
                   </form>
                 </div>
@@ -308,24 +296,23 @@ const Navigation = () => {
                   onClick={() => {
                     setIsNotificationOpen(!isNotificationOpen);
                     setIsProfileMenuOpen(false);
-                    // Fetch if opening
                     if (!isNotificationOpen) fetchNotifications();
                   }}
-                  className="p-2 lg:p-2.5 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 relative group"
+                  className="p-2 lg:p-2.5 text-slate-500 hover:text-[#004fcb] rounded-lg hover:bg-blue-50 transition-all duration-200 relative"
                 >
                   <Bell size={20} />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border-2 border-white shadow-sm">
+                    <span className="absolute top-1.5 right-1.5 bg-[#004fcb] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border-2 border-white shadow-sm">
                       {unreadCount}
                     </span>
                   )}
                 </button>
 
                 {isNotificationOpen && (
-                  <div className="absolute right-0 mt-3 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100/50">
+                  <div className="absolute right-0 mt-3 w-80 bg-white border border-blue-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-blue-50 bg-slate-50/50">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-gray-900">Notifications</h3>
+                        <h3 className="font-semibold text-slate-900 text-sm">Notifications</h3>
                         {unreadCount > 0 && (
                           <button onClick={markAllRead} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
                             Mark all read
@@ -343,25 +330,25 @@ const Navigation = () => {
                         notifications.map((notification) => (
                           <div
                             key={notification._id}
-                            className="px-5 py-4 border-b border-gray-100 hover:bg-gray-50/80 transition-colors duration-200 cursor-pointer bg-blue-50/30"
+                            className={`px-5 py-4 border-b border-slate-50 hover:bg-blue-50/50 transition-colors duration-200 cursor-pointer ${!notification.isRead ? 'bg-blue-50/20' : ''
+                              }`}
                             onClick={() => {
-                              // Mark read and hide (filter out)
                               markAsRead(notification._id, notification.metadata?.link);
                             }}
                           >
                             <div className="flex items-start space-x-3">
-                              <div className="w-2 h-2 rounded-full mt-2 bg-blue-500"></div>
+                              {!notification.isRead && (
+                                <div className="w-2 h-2 rounded-full mt-2 bg-[#004fcb]"></div>
+                              )}
                               <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 text-sm">
+                                <h4 className="font-medium text-slate-800 text-sm">
                                   {notification.title}
                                 </h4>
-                                <p className="text-gray-600 text-sm mt-1">
+                                <p className="text-slate-500 text-xs mt-1 leading-relaxed">
                                   {notification.message}
                                 </p>
-                                <div className="flex items-center justify-between mt-2">
-                                  <span className="text-xs text-gray-400">
-                                    {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
+                                <div className="mt-2 text-[10px] text-slate-400">
+                                  {new Date(notification.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
@@ -369,8 +356,8 @@ const Navigation = () => {
                         )))}
                     </div>
 
-                    <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
-                      <Link to="/notifications" className="block text-center text-xs text-blue-600 hover:underline">View History</Link>
+                    <div className="px-5 py-3 border-t border-blue-50 bg-slate-50/50">
+                      <Link to="/notifications" className="block text-center text-xs text-[#004fcb] hover:underline font-medium">View History</Link>
                     </div>
                   </div>
                 )}
@@ -386,9 +373,9 @@ const Navigation = () => {
                       setIsProfileMenuOpen(!isProfileMenuOpen);
                       setIsNotificationOpen(false);
                     }}
-                    className="flex items-center space-x-2 lg:space-x-3 focus:outline-none group p-1.5 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                    className="flex items-center space-x-2 lg:space-x-3 focus:outline-none group p-1.5 rounded-xl hover:bg-blue-50 transition-all duration-200"
                   >
-                    <div className="flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-center w-8 h-8 lg:w-9 lg:h-9 rounded-lg bg-blue-100 border border-blue-200 shadow-sm overflow-hidden">
                       <img
                         src={profileImage || getProfileImageUrl(null)}
                         alt="profile"
@@ -398,52 +385,49 @@ const Navigation = () => {
                         }}
                       />
                     </div>
-                    <div className="hidden lg:flex flex-col items-start">
-                      <span className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors max-w-[100px] truncate">
+                    <div className="hidden lg:flex flex-col items-start text-left">
+                      <span className="text-sm font-medium text-slate-700 group-hover:text-[#004fcb] transition-colors max-w-[100px] truncate">
                         {user.name?.split(" ")[0] || user.email.split("@")[0]}
                       </span>
-                      <span className="text-xs text-gray-500">Premium</span>
                     </div>
                     <ChevronDown
                       size={16}
-                      className={`text-gray-500 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""
+                      className={`text-slate-400 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180 text-[#004fcb]" : ""
                         }`}
                     />
                   </button>
 
                   {/* Profile Dropdown Menu */}
                   {isProfileMenuOpen && (
-                    <div className="absolute right-0 mt-3 w-72 lg:w-80 bg-white border border-gray-200 rounded-2xl shadow-xl py-2 z-50 overflow-hidden backdrop-blur-lg">
-                      {/* Profile header */}
-                      <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100/50">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm overflow-hidden">
+                    <div className="absolute right-0 mt-3 w-64 bg-white border border-blue-100 rounded-xl shadow-xl py-2 z-50 overflow-hidden">
+                      <div className="px-5 py-4 border-b border-blue-50 bg-slate-50/50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg bg-slate-200 overflow-hidden">
                             <img
                               src={profileImage || getProfileImageUrl(null)}
                               alt="profile"
-                              className="w-12 h-12 rounded-xl object-cover"
+                              className="w-full h-full object-cover"
                               onError={(e) => {
                                 e.currentTarget.src = getProfileImageUrl(null);
                               }}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-gray-900 truncate">{user.name || user.email}</h4>
-                            <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                            <h4 className="font-bold text-slate-800 text-sm truncate">{user.name || user.email}</h4>
+                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Menu items */}
                       <div className="py-2">
                         {profileMenuItems.map((item) => (
                           <Link
                             key={item.name}
                             to={item.href}
-                            className="flex items-center px-5 py-3 hover:bg-gray-50/80 transition-all duration-200 rounded-xl mx-2 text-gray-700 hover:text-gray-900 font-medium text-sm group"
+                            className="flex items-center px-4 py-2.5 hover:bg-blue-50/50 transition-all duration-200 mx-2 rounded-lg text-slate-600 hover:text-[#004fcb] font-medium text-sm group"
                             onClick={closeAllDropdowns}
                           >
-                            <span className="mr-4 text-gray-500 group-hover:text-gray-700 transition-colors">
+                            <span className="mr-3 text-slate-400 group-hover:text-[#004fcb] transition-colors">
                               {item.icon}
                             </span>
                             {item.name}
@@ -451,16 +435,15 @@ const Navigation = () => {
                         ))}
                       </div>
 
-                      {/* Logout button */}
-                      <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
+                      <div className="px-2 py-2 border-t border-blue-50 mt-1">
                         <button
                           onClick={() => {
                             logout();
                             closeAllDropdowns();
                           }}
-                          className="flex items-center w-full text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl py-3 px-2 font-semibold text-sm transition-all duration-200 group"
+                          className="flex items-center w-full text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg py-2.5 px-4 font-medium text-sm transition-all duration-200"
                         >
-                          <LogOut size={18} className="mr-3 ml-1" />
+                          <LogOut size={16} className="mr-3" />
                           Logout
                         </button>
                       </div>
@@ -468,12 +451,12 @@ const Navigation = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center space-x-2 lg:space-x-3">
+                <div className="flex items-center gap-3">
                   <Link to="/signin" onClick={closeAllDropdowns}>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="font-semibold rounded-xl border border-gray-300/50 px-4 lg:px-6"
+                      className="font-medium text-slate-600 hover:text-[#004fcb] hover:bg-blue-50 rounded-lg px-4"
                     >
                       Sign In
                     </Button>
@@ -482,7 +465,7 @@ const Navigation = () => {
                     <Button
                       variant="default"
                       size="sm"
-                      className="font-semibold text-white rounded-xl bg-gray-900 hover:bg-gray-700 px-4 lg:px-6"
+                      className="font-medium text-white rounded-lg bg-[#004fcb] hover:bg-[#003bb5] px-5 shadow-sm shadow-blue-200"
                     >
                       Join Now
                     </Button>
@@ -511,14 +494,14 @@ const Navigation = () => {
 
           {/* Mobile search bar */}
           {isSearchOpen && (
-            <div className="md:hidden mt-3 transition-all duration-300">
+            <div className="md:hidden mt-3 pb-3 transition-all duration-300">
               <form onSubmit={handleSearchSubmit} className="relative">
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 text-sm rounded-xl border border-gray-300 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-gray-400"
+                  className="w-full pl-4 pr-12 py-3 text-sm rounded-lg border border-blue-100 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb]"
                   autoFocus
                 />
               </form>
@@ -528,107 +511,82 @@ const Navigation = () => {
 
         {/* Mobile menu */}
         <div
-          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
+          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden bg-white border-t border-blue-100 ${isMenuOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
             }`}
         >
-          <div className="px-2 pt-2 pb-4 space-y-1 sm:px-3 bg-white/95 backdrop-blur-lg border-t border-gray-200">
+          <div className="px-4 py-4 space-y-2 bg-white">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="flex items-center px-4 py-3 rounded-xl text-base font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50/80 transition-all duration-200"
+                className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:text-[#004fcb] hover:bg-blue-50 transition-all duration-200"
                 onClick={closeAllDropdowns}
               >
-                <span className="mr-3 text-gray-600">{item.icon}</span>
+                <span className="mr-3 text-slate-400 group-hover:text-[#004fcb]">{item.icon}</span>
                 {item.name}
               </Link>
             ))}
 
-            <div className="pt-4 pb-2 border-t border-gray-200">
-              <div className="flex space-x-3 px-4 py-3">
-                <button
-                  className="p-3 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 relative"
-                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                >
-                  <Bell size={20} />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
+            <div className="pt-4 border-t border-blue-100 mt-2">
+              <Link to="/notifications" className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:text-[#004fcb] hover:bg-blue-50">
+                <span className="mr-3 text-slate-400"><Bell size={18} /></span>
+                Notifications
+                {unreadCount > 0 && <span className="ml-auto bg-[#004fcb] text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>}
+              </Link>
 
-              {user && (
-                <div className="px-4 py-3 border-t border-gray-200">
-                  <div className="flex items-center space-x-3 mb-4">
+              {user ? (
+                <div className="mt-4 pt-4 border-t border-blue-100">
+                  <div className="flex items-center space-x-3 mb-4 px-2">
                     <img
                       src={getProfileImageUrl(user.profileImage)}
                       alt="profile"
-                      className="w-11 h-11 rounded-xl"
+                      className="w-10 h-10 rounded-lg object-cover bg-slate-100"
                       onError={(e) => {
                         e.currentTarget.src = getProfileImageUrl(null);
                       }}
                     />
                     <div>
-                      <h4 className="font-semibold text-gray-900">{user.name || user.email}</h4>
-                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <h4 className="font-semibold text-slate-900 text-sm">{user.name || user.email}</h4>
+                      <p className="text-xs text-slate-500">{user.email}</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-2 gap-2">
                     {profileMenuItems.map((item) => (
                       <Link
                         key={item.name}
                         to={item.href}
-                        className="flex flex-col items-center justify-center p-3 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50/80 rounded-xl transition-all duration-200"
+                        className="flex flex-col items-center justify-center p-3 text-xs font-medium text-slate-600 hover:text-[#004fcb] hover:bg-blue-50 rounded-lg border border-slate-100"
                         onClick={closeAllDropdowns}
                       >
-                        <span className="mb-2 text-gray-600">{item.icon}</span>
+                        <span className="mb-2 text-slate-400">{item.icon}</span>
                         {item.name}
                       </Link>
                     ))}
                   </div>
-                </div>
-              )}
 
-              <div className="flex flex-col space-y-3 mt-4">
-                {user ? (
-                  <Button
-                    onClick={() => {
-                      logout();
-                      closeAllDropdowns();
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full font-semibold rounded-xl transition-all duration-300 hover:bg-red-50 text-red-600 py-3 border border-red-200"
+                  <button
+                    onClick={() => { logout(); closeAllDropdowns(); }}
+                    className="w-full mt-4 flex items-center justify-center p-3 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors border border-red-100"
                   >
                     <LogOut size={18} className="mr-2" />
                     Logout
-                  </Button>
-                ) : (
-                  <>
-                    <Link to="/signin" className="w-full" onClick={closeAllDropdowns}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full font-semibold rounded-xl transition-all duration-300 hover:bg-gray-50 hover:text-gray-900 py-3 border border-gray-300/50"
-                      >
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link to="/signup" className="w-full" onClick={closeAllDropdowns}>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-full font-semibold rounded-xl bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 transition-all duration-300 shadow-lg py-3"
-                      >
-                        Join Now
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3 mt-4">
+                  <Link to="/signin" className="block" onClick={closeAllDropdowns}>
+                    <Button className="w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg py-6 shadow-sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup" className="block" onClick={closeAllDropdowns}>
+                    <Button className="w-full bg-[#004fcb] hover:bg-[#003bb5] text-white rounded-lg py-6 shadow-lg shadow-blue-200">
+                      Join Now
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -637,7 +595,7 @@ const Navigation = () => {
       {/* Overlay for mobile menu and dropdowns */}
       {(isMenuOpen || isNotificationOpen || isProfileMenuOpen) && (
         <div
-          className="fixed inset-0 bg-black/20 z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/10 backdrop-blur-[1px] z-40 md:hidden"
           onClick={closeAllDropdowns}
         />
       )}

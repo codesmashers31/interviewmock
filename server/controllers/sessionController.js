@@ -56,8 +56,9 @@ export const getSessionsByCandidate = async (req, res) => {
         const { candidateId } = req.params;
         const sessions = await sessionService.getSessionsByCandidateId(candidateId);
 
-        // Import Expert and mongoose
+        // Import Expert, User and mongoose
         const Expert = (await import('../models/expertModel.js')).default;
+        const User = (await import('../models/User.js')).default;
         const mongoose = (await import('mongoose')).default;
 
         // Enrich sessions with expert details
@@ -65,28 +66,37 @@ export const getSessionsByCandidate = async (req, res) => {
             sessions.map(async (session) => {
                 let expert = null;
 
-                // Try multiple strategies to find the expert
-                // Strategy 1: Direct userId match (if expertId is already the userId)
-                expert = await Expert.findOne({ userId: session.expertId });
+                try {
+                    // Strategy 1: If expertId is a valid ObjectId, try finding by userId or _id
+                    if (mongoose.Types.ObjectId.isValid(session.expertId)) {
+                        // A. Try finding by userId (Ref to User)
+                        expert = await Expert.findOne({ userId: session.expertId }).populate('userId');
 
-                // Strategy 2: If expertId looks like an ObjectId, try converting
-                if (!expert && mongoose.Types.ObjectId.isValid(session.expertId)) {
-                    expert = await Expert.findOne({ userId: new mongoose.Types.ObjectId(session.expertId) });
+                        // B. Try finding by _id (The Expert Document ID)
+                        if (!expert) {
+                            expert = await Expert.findById(session.expertId).populate('userId');
+                        }
+                    }
+
+                    // Strategy 2: If expertId looks like an email (Legacy / Seed Data)
+                    if (!expert && typeof session.expertId === 'string' && session.expertId.includes('@')) {
+                        const user = await User.findOne({ email: session.expertId });
+                        if (user) {
+                            expert = await Expert.findOne({ userId: user._id }).populate('userId');
+                        }
+                    }
+                } catch (lookupErr) {
+                    console.error(`Expert lookup failed for session ${session.sessionId || 'unknown'}:`, lookupErr);
                 }
 
-                // Strategy 3: Try finding by _id in case expertId is the expert document's _id
-                if (!expert && mongoose.Types.ObjectId.isValid(session.expertId)) {
-                    expert = await Expert.findById(session.expertId);
-                }
-
-
-                if (expert) {
-
-                }
 
                 // Match Review - Expert's review for this session
                 const Review = (await import('../models/reviewModel.js')).default;
                 const expertReview = await Review.findOne({ sessionId: session.sessionId, reviewerRole: 'expert' });
+
+                const expertName = expert?.personalInformation?.userName || expert?.userId?.name || 'Unknown Expert';
+                const expertRole = expert?.professionalDetails?.title || 'Expert';
+                const expertCompany = expert?.professionalDetails?.company || 'N/A';
 
                 return {
                     ...session.toObject(),
@@ -99,15 +109,15 @@ export const getSessionsByCandidate = async (req, res) => {
                         feedback: expertReview.feedback
                     } : null,
                     expertDetails: expert ? {
-                        name: expert.personalInformation?.userName || 'Unknown Expert',
-                        role: expert.professionalDetails?.title || 'Expert',
-                        company: expert.professionalDetails?.company || 'N/A',
+                        name: expertName,
+                        role: expertRole,
+                        company: expertCompany,
                         category: expert.personalInformation?.category || 'General',
                         profileImage: expert.profileImage || null,
                         rating: expert.metrics?.avgRating || 4.8,
                         reviews: expert.metrics?.totalReviews || 0
                     } : {
-                        name: 'Unknown Expert',
+                        name: 'Unknown Expert', // If we really can't find the expert doc, but maybe we can find the User?
                         role: 'Expert',
                         company: 'N/A',
                         category: 'General',

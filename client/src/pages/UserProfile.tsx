@@ -73,8 +73,8 @@ export default function UserProfile() {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-900 border-t-transparent"></div>
-                    <p className="text-gray-700 mt-4 font-medium">Loading profile...</p>
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#004fcb] border-t-transparent"></div>
+                    <p className="text-slate-600 mt-4 font-medium">Loading profile...</p>
                 </div>
             </div>
         );
@@ -85,17 +85,18 @@ export default function UserProfile() {
             <Navigation />
             <div className="min-h-screen bg-gray-50">
                 {/* Header */}
-                <div className="bg-white border-b border-gray-200">
+                {/* Header */}
+                <div className="bg-white border-b border-blue-100">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                                <p className="text-gray-600 mt-1">Manage your personal information and preferences</p>
+                                <h1 className="text-2xl font-bold text-[#002a6b]">My Profile</h1>
+                                <p className="text-slate-600 mt-1">Manage your personal information and preferences</p>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="text-right">
-                                    <p className="text-sm text-gray-500">Profile Completion</p>
-                                    <p className="text-2xl font-bold text-gray-900">{profileData?.profileCompletion || 0}%</p>
+                                    <p className="text-sm text-slate-500">Profile Completion</p>
+                                    <p className="text-2xl font-bold text-[#004fcb]">{profileData?.profileCompletion || 0}%</p>
                                 </div>
                                 <div className="w-16 h-16">
                                     <svg className="transform -rotate-90" viewBox="0 0 36 36">
@@ -111,6 +112,7 @@ export default function UserProfile() {
                                             stroke="#111827"
                                             strokeWidth="3"
                                             strokeDasharray={`${profileData?.profileCompletion || 0}, 100`}
+                                            className="text-[#004fcb]"
                                         />
                                     </svg>
                                 </div>
@@ -123,10 +125,11 @@ export default function UserProfile() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                         {/* Sidebar */}
+                        {/* Sidebar */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden">
                                 {/* Profile Card */}
-                                <div className="bg-gradient-to-br from-gray-900 to-gray-700 p-6 text-center">
+                                <div className="bg-gradient-to-br from-[#004fcb] to-[#002a6b] p-6 text-center">
                                     <div className="flex justify-center mb-4">
                                         <div className="relative">
                                             <img
@@ -141,21 +144,21 @@ export default function UserProfile() {
                                         </div>
                                     </div>
                                     <h3 className="text-white font-bold text-lg">{profileData?.name}</h3>
-                                    <p className="text-gray-300 text-sm mt-1">{profileData?.email}</p>
+                                    <p className="text-blue-100 text-sm mt-1">{profileData?.email}</p>
                                 </div>
 
                                 {/* Quick Info */}
                                 <div className="p-6 space-y-4">
                                     {profileData?.personalInfo?.phone && (
                                         <div className="flex items-center gap-3 text-sm">
-                                            <Phone className="w-4 h-4 text-gray-500" />
-                                            <span className="text-gray-700">{profileData.personalInfo.phone}</span>
+                                            <Phone className="w-4 h-4 text-[#004fcb]" />
+                                            <span className="text-slate-700">{profileData.personalInfo.phone}</span>
                                         </div>
                                     )}
                                     {profileData?.personalInfo?.city && (
                                         <div className="flex items-center gap-3 text-sm">
-                                            <MapPin className="w-4 h-4 text-gray-500" />
-                                            <span className="text-gray-700">
+                                            <MapPin className="w-4 h-4 text-[#004fcb]" />
+                                            <span className="text-slate-700">
                                                 {profileData.personalInfo.city}, {profileData.personalInfo.state}
                                             </span>
                                         </div>
@@ -163,7 +166,7 @@ export default function UserProfile() {
                                 </div>
 
                                 {/* Navigation */}
-                                <div className="border-t border-gray-200 p-4">
+                                <div className="border-t border-blue-50 p-4">
                                     <nav className="space-y-1">
                                         {tabs.map((tab) => {
                                             const Icon = tab.icon;
@@ -172,8 +175,8 @@ export default function UserProfile() {
                                                     key={tab.id}
                                                     onClick={() => setActiveTab(tab.id)}
                                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
-                                                        ? "bg-gray-900 text-white"
-                                                        : "text-gray-700 hover:bg-gray-50"
+                                                        ? "bg-blue-50 text-[#004fcb]"
+                                                        : "text-slate-600 hover:bg-slate-50 hover:text-[#004fcb]"
                                                         }`}
                                                 >
                                                     <Icon className="w-4 h-4" />
@@ -188,7 +191,7 @@ export default function UserProfile() {
 
                         {/* Content Area */}
                         <div className="lg:col-span-3">
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
                                 {activeTab === "personal" && (
                                     <PersonalInfoSection profileData={profileData} onUpdate={fetchProfile} />
                                 )}

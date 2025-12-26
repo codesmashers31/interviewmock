@@ -12,6 +12,78 @@ import Navigation from "./Navigation";
 import Footer from "./Footer";
 import { mapExpertToProfile, Profile } from "../lib/bookSessionUtils";
 
+const BookSessionSkeleton = () => (
+  <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
+    <Navigation />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+      {/* Banner Skeleton */}
+      <div className="w-full h-48 md:h-64 bg-gray-200 rounded-2xl mb-8"></div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Content Skeleton */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* Promo Banner Skeleton */}
+          <div className="h-20 bg-gray-200 rounded-xl"></div>
+
+          {/* Profile Card Skeleton */}
+          <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="w-24 h-24 bg-gray-200 rounded-2xl shrink-0"></div>
+              <div className="flex-1 space-y-4">
+                <div className="flex justify-between">
+                  <div className="h-8 bg-gray-200 w-48 rounded"></div>
+                  <div className="h-6 bg-gray-200 w-24 rounded-full"></div>
+                </div>
+                <div className="h-4 bg-gray-200 w-32 rounded"></div>
+                <div className="grid grid-cols-3 gap-4 mt-6">
+                  <div className="h-16 bg-gray-200 rounded-xl"></div>
+                  <div className="h-16 bg-gray-200 rounded-xl"></div>
+                  <div className="h-16 bg-gray-200 rounded-xl"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="bg-white rounded-2xl border border-gray-200 h-96">
+            <div className="border-b border-gray-100 p-1 flex">
+              <div className="h-12 w-1/2 bg-gray-100 rounded-t-lg"></div>
+              <div className="h-12 w-1/2 bg-white rounded-t-lg"></div>
+            </div>
+            <div className="p-8 space-y-6">
+              <div className="h-6 w-48 bg-gray-200 rounded"></div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-24 bg-gray-100 rounded-xl"></div>
+                <div className="h-24 bg-gray-100 rounded-xl"></div>
+                <div className="h-24 bg-gray-100 rounded-xl"></div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-4 w-full bg-gray-100 rounded"></div>
+                <div className="h-4 w-full bg-gray-100 rounded"></div>
+                <div className="h-4 w-3/4 bg-gray-100 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar Skeleton */}
+        <div className="hidden lg:block lg:col-span-4 space-y-6">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 h-auto">
+            <div className="h-6 bg-gray-200 w-1/2 rounded mb-6"></div>
+            <div className="flex gap-2 overflow-hidden mb-6">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-20 w-16 bg-gray-200 rounded-xl shrink-0"></div>)}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-16 bg-gray-200 rounded-xl"></div>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <Footer />
+  </div>
+);
+
 const BookSessionPage = () => {
   const [showPayment, setShowPayment] = useState(false);
   const location = useLocation();
@@ -105,11 +177,7 @@ const BookSessionPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-800 border-t-transparent"></div>
-      </div>
-    );
+    return <BookSessionSkeleton />;
   }
 
   if (!profile) {
@@ -287,30 +355,30 @@ const BookSessionPage = () => {
 
   // Booking Banner Component
   const BookingBanner = () => (
-    <div className="relative rounded-2xl overflow-hidden shadow-2xl mb-8 group">
+    <div className="relative rounded-2xl overflow-hidden shadow-xl mb-8 group border border-blue-100">
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1551836022-4c4c79ecde51?auto=format&fit=crop&w=1200&q=80')" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-gray-800/70 to-gray-700/80" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#002a6b]/90 via-[#004fcb]/80 to-[#4285f4]/80" />
       <div className="relative z-10 px-6 py-8 md:px-12 md:py-12 text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
-            <Zap className="w-4 h-4 text-gray-200" fill="currentColor" />
-            <span className="text-sm font-semibold">LIMITED SPOTS AVAILABLE</span>
+          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4 border border-white/20">
+            <Zap className="w-4 h-4 text-yellow-300" fill="currentColor" />
+            <span className="text-sm font-bold tracking-wide">LIMITED SPOTS AVAILABLE</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-            Master Your Next <span className="bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent">Interview</span>
+            Master Your Next <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">Interview</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-100 mb-6 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-blue-100 mb-6 max-w-2xl mx-auto leading-relaxed">
             Get personalized coaching from industry experts. Boost your confidence with realistic mock interviews and detailed feedback.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="px-8 py-3 bg-gray-800 hover:bg-gray-900 rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+            <button className="px-8 py-3 bg-white text-[#004fcb] hover:bg-blue-50 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               Book Session Now
             </button>
-            <button className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl font-medium text-white backdrop-blur-sm transition-all duration-200 flex items-center gap-2">
+            <button className="px-8 py-3 bg-[#004fcb]/50 hover:bg-[#004fcb]/70 border border-white/30 rounded-xl font-medium text-white backdrop-blur-sm transition-all duration-200 flex items-center gap-2">
               <MessageCircle className="w-5 h-5" />
               View Testimonials
             </button>
@@ -323,17 +391,17 @@ const BookSessionPage = () => {
   // Promo Banner Component
   const PromoBanner = () => (
     <div className="relative mb-8">
-      <div className="rounded-xl border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="rounded-xl border border-blue-100 bg-blue-50/50 shadow-sm hover:shadow-md transition-all duration-300">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-5">
           <div className="text-center md:text-left">
-            <h3 className="text-lg md:text-xl font-semibold text-gray-900">
+            <h3 className="text-lg md:text-xl font-semibold text-[#002a6b]">
               Unlock Your First Mock Interview 🚀
             </h3>
-            <p className="text-sm text-gray-700">
-              Get <span className="font-medium text-gray-900">20% OFF</span> your first session with top industry experts.
+            <p className="text-sm text-slate-600">
+              Get <span className="font-bold text-[#004fcb]">20% OFF</span> your first session with top industry experts.
             </p>
           </div>
-          <button className="px-5 py-2.5 rounded-lg bg-gray-700 text-white font-medium text-sm hover:bg-gray-900 transition-colors shadow-sm">
+          <button className="px-5 py-2.5 rounded-lg bg-[#004fcb] text-white font-medium text-sm hover:bg-[#003bb5] transition-colors shadow-sm shadow-blue-200">
             Claim Offer
           </button>
         </div>
@@ -355,15 +423,15 @@ const BookSessionPage = () => {
               key={index}
               type="button"
               onClick={() => setSelectedDate(index)}
-              className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all ${selectedDate === index
-                ? "bg-gray-700 text-white shadow-md transform scale-105"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all border ${selectedDate === index
+                ? "bg-[#004fcb] text-white shadow-md transform scale-105 border-[#004fcb]"
+                : "bg-white text-slate-700 hover:bg-blue-50 border-gray-200"
                 }`}
             >
               <span className="font-semibold text-sm">
                 {index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'short' })}
               </span>
-              <span className="text-xs mt-1">
+              <span className={`text-xs mt-1 ${selectedDate === index ? 'text-blue-100' : 'text-slate-500'}`}>
                 {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </button>
@@ -378,13 +446,13 @@ const BookSessionPage = () => {
                 onClick={() => setSelectedSlot(slot)}
                 className={`p-4 rounded-xl border-2 text-center transition-all ${slot.available
                   ? selectedSlot?.time === slot.time
-                    ? "border-gray-700 bg-gray-100 shadow-md transform scale-105"
-                    : "border-gray-200 hover:border-gray-400 hover:bg-gray-100"
-                  : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
+                    ? "border-[#004fcb] bg-blue-50 text-[#004fcb] shadow-md transform scale-105 font-bold"
+                    : "border-gray-100 hover:border-[#004fcb]/50 hover:bg-blue-50/50 text-slate-700"
+                  : "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
                   }`}
               >
                 <div className="font-semibold">{slot.time}</div>
-                <div className={`text-xs mt-1 ${slot.available ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`text-xs mt-1 ${slot.available ? (selectedSlot?.time === slot.time ? 'text-[#004fcb]' : 'text-green-600') : 'text-red-300'}`}>
                   {slot.available ? "✓ Available" : "✗ Booked"}
                 </div>
               </button>
@@ -437,8 +505,8 @@ const BookSessionPage = () => {
         <button
           onClick={() => setShowPayment(true)}
           disabled={!selectedSlot}
-          className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all mt-6 flex items-center justify-center gap-2 ${selectedSlot
-            ? "bg-gray-700 hover:bg-gray-900 shadow-lg hover:shadow-xl hover:scale-105"
+          className={`w-full py-4 px-6 rounded-xl font-bold text-white transition-all mt-6 flex items-center justify-center gap-2 ${selectedSlot
+            ? "bg-[#004fcb] hover:bg-[#003bb5] shadow-lg hover:shadow-xl hover:scale-105 shadow-blue-200"
             : "bg-gray-300 cursor-not-allowed"
             }`}
         >
@@ -451,26 +519,26 @@ const BookSessionPage = () => {
           <span>Secure payment • 24-hour cancellation policy</span>
         </div>
       </div>
-      <div className="bg-gray-100 rounded-2xl p-6 text-center">
-        <h4 className="font-semibold text-gray-800 mb-3">Why Choose Us?</h4>
+      <div className="bg-blue-50/50 rounded-2xl p-6 text-center border border-blue-100/50">
+        <h4 className="font-semibold text-[#002a6b] mb-3">Why Choose Us?</h4>
         <div className="grid grid-cols-3 gap-4 text-xs">
           <div>
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm text-[#004fcb]">
+              <CheckCircle className="w-4 h-4" />
             </div>
-            <span className="text-gray-700">98% Success Rate</span>
+            <span className="text-slate-600">98% Success Rate</span>
           </div>
           <div>
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Users className="w-4 h-4 text-gray-700" />
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm text-[#004fcb]">
+              <Users className="w-4 h-4" />
             </div>
-            <span className="text-gray-700">500+ Experts</span>
+            <span className="text-slate-600">500+ Experts</span>
           </div>
           <div>
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Clock className="w-4 h-4 text-gray-700" />
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm text-[#004fcb]">
+              <Clock className="w-4 h-4" />
             </div>
-            <span className="text-gray-700">24/7 Support</span>
+            <span className="text-slate-600">24/7 Support</span>
           </div>
         </div>
       </div>
@@ -548,7 +616,7 @@ const BookSessionPage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 pb-20 lg:pb-0">
+      <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
         <Navigation />
         {/* Mobile Booking FAB */}
         <div className="lg:hidden fixed bottom-20 right-4 z-10">
@@ -721,7 +789,7 @@ const BookSessionPage = () => {
                     <button
                       onClick={() => setActiveTab("details")}
                       className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "details"
-                        ? "border-gray-700 text-gray-700 bg-gray-50"
+                        ? "border-[#004fcb] text-[#004fcb] bg-blue-50"
                         : "border-transparent text-gray-500 hover:text-gray-700"
                         }`}
                     >
@@ -730,7 +798,7 @@ const BookSessionPage = () => {
                     <button
                       onClick={() => setActiveTab("reviews")}
                       className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "reviews"
-                        ? "border-gray-700 text-gray-700 bg-gray-50"
+                        ? "border-[#004fcb] text-[#004fcb] bg-blue-50"
                         : "border-transparent text-gray-500 hover:text-gray-700"
                         }`}
                     >
@@ -748,31 +816,31 @@ const BookSessionPage = () => {
                           Mock Interview Session Overview
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                          <div className="flex items-center gap-4 p-4 bg-gray-100 rounded-xl">
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <Clock className="w-6 h-6 text-gray-600" />
+                          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-50">
+                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
+                              <Clock className="w-6 h-6" />
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-800">{profile.availability?.sessionDuration || 60} Minutes</div>
-                              <div className="text-sm text-gray-600">Session Duration</div>
+                              <div className="font-semibold text-slate-800">{profile.availability?.sessionDuration || 60} Minutes</div>
+                              <div className="text-sm text-slate-500">Session Duration</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 p-4 bg-gray-100 rounded-xl">
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <Video className="w-6 h-6 text-gray-600" />
+                          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-50">
+                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
+                              <Video className="w-6 h-6" />
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-800">Video Call</div>
-                              <div className="text-sm text-gray-600">Session Format</div>
+                              <div className="font-semibold text-slate-800">Video Call</div>
+                              <div className="text-sm text-slate-500">Session Format</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 p-4 bg-gray-100 rounded-xl">
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <BookOpen className="w-6 h-6 text-gray-600" />
+                          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-50">
+                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
+                              <BookOpen className="w-6 h-6" />
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-800">Personalized</div>
-                              <div className="text-sm text-gray-600">Tailored Questions</div>
+                              <div className="font-semibold text-slate-800">Personalized</div>
+                              <div className="text-sm text-slate-500">Tailored Questions</div>
                             </div>
                           </div>
                         </div>
@@ -805,13 +873,13 @@ const BookSessionPage = () => {
                                 "Comprehensive analysis of your performance with actionable improvement suggestions.",
                             },
                           ].map((item, index) => (
-                            <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
-                              <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                            <div key={index} className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="w-8 h-8 bg-[#004fcb] text-white rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
                                 {item.step}
                               </div>
                               <div>
-                                <h5 className="font-semibold text-gray-800 mb-2">{item.title}</h5>
-                                <p className="text-gray-600">{item.description}</p>
+                                <h5 className="font-semibold text-slate-800 mb-2">{item.title}</h5>
+                                <p className="text-slate-600">{item.description}</p>
                               </div>
                             </div>
                           ))}

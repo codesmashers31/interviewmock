@@ -1,48 +1,145 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, MapPin, Edit3, User, Sparkles } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Edit3,
+  User,
+  Sparkles,
+  LayoutDashboard,
+  Calendar,
+  MessageSquare,
+  Bookmark,
+  Settings,
+  Bot,
+  Clock,
+  Video
+} from "lucide-react";
 import axios from '../lib/axios';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImageUrl } from "../lib/imageUtils";
 
 const Sidebar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded or collapsed based on preference, user asked for "small card" so maybe default collapsed or small? Let's default open but it's small. Actually user said "small card... using some collapt".
-  // Let's implement a toggle.
+  const location = useLocation();
+  const [isExpanded, setIsExpanded] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
+  const [nextSession, setNextSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch Profile and Sessions
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       if (user?.id) {
+        setLoading(true);
         try {
-          const response = await axios.get("/api/user/profile", {
-            headers: { userid: user.id }
-          });
-          if (response.data.success) {
-            setProfileData(response.data.data);
+          const [profileRes, sessionsRes] = await Promise.all([
+            axios.get("/api/user/profile", { headers: { userid: user.id } }),
+            axios.get(`/api/sessions/candidate/${user.id}`)
+          ]);
+
+          if (profileRes.data.success) {
+            setProfileData(profileRes.data.data);
+          }
+
+          if (Array.isArray(sessionsRes.data)) {
+            // Find the next upcoming session
+            const now = new Date();
+            const upcoming = sessionsRes.data
+              .filter((s: any) => new Date(s.startTime) > now && s.status !== 'Cancelled')
+              .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0];
+
+            if (upcoming) {
+              setNextSession(upcoming);
+            }
           }
         } catch (error) {
-          console.error("Error fetching profile:", error);
+          console.error("Error fetching sidebar data:", error);
+        } finally {
+          setLoading(false);
         }
       }
     };
-    fetchProfile();
+    fetchData();
   }, [user?.id]);
 
-  if (!profileData) {
+  if (loading && !profileData) {
     return (
-      <div className="flex justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#004fcb]"></div>
+      <div className="w-full max-w-xs mx-auto space-y-6 pb-6">
+        {/* Profile Card Skeleton */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse shrink-0" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="px-4 pb-4 space-y-3">
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <div className="h-2 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-2 w-8 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full w-2/3 bg-gray-200 rounded-full animate-pulse" />
+              </div>
+            </div>
+            <div className="h-9 w-full bg-gray-100 rounded-lg animate-pulse" />
+          </div>
+        </div>
+
+        {/* AI Interview Button Skeleton */}
+        <div className="w-full h-20 bg-gray-200 rounded-xl animate-pulse shadow-sm" />
+
+        {/* Navigation Skeleton */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 space-y-1">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-11 w-full bg-gray-50 rounded-xl animate-pulse" />
+          ))}
+        </div>
+
+        {/* Upcoming Session Skeleton */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gray-200 animate-pulse shrink-0" />
+            <div className="space-y-2 flex-1">
+              <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="h-8 w-full bg-gray-200 rounded-lg animate-pulse" />
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="w-full max-w-xs mx-auto">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+  if (!profileData) return null;
 
-        {/* Header / Summary Section // Always visible */}
+  const NavItem = ({ icon: Icon, label, path, active }: any) => (
+    <button
+      onClick={() => navigate(path)}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${active
+        ? "bg-[#004fcb]/10 text-[#004fcb]"
+        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        }`}
+    >
+      <Icon size={18} className={active ? "text-[#004fcb]" : "text-gray-500"} />
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="w-full max-w-xs mx-auto space-y-6 pb-6">
+
+      {/* 1. Profile Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
         <div
           className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -70,13 +167,9 @@ const Sidebar = () => {
           </button>
         </div>
 
-        {/* Expanded Content */}
         {isExpanded && (
           <div className="px-4 pb-4 bg-white border-t border-gray-100">
-
-            {/* Quick Stats / Info */}
             <div className="py-4 space-y-3">
-              {/* Completion Bar */}
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
                   <span className="font-medium text-gray-600">Profile Completion</span>
@@ -90,7 +183,6 @@ const Sidebar = () => {
                 </div>
               </div>
 
-              {/* Contact Snippets */}
               <div className="space-y-2 text-xs text-gray-600">
                 <div className="flex items-center gap-2">
                   <User size={14} className="text-[#004fcb]" />
@@ -105,34 +197,133 @@ const Sidebar = () => {
               </div>
             </div>
 
-            {/* AI Action Button (Simplified) */}
             <button
               onClick={() => navigate("/profile")}
-              className="w-full flex items-center justify-center gap-2 bg-[#004fcb] hover:bg-[#003bb5] text-white py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm shadow-blue-900/10"
+              className="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium transition-all border border-gray-200"
             >
-              <Edit3 size={16} />
+              <Edit3 size={14} />
               Edit Profile
             </button>
-
           </div>
         )}
       </div>
 
-      {/* Promo Content */}
-      <div className="mt-4 bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-            <Sparkles className="w-5 h-5 text-[#004fcb] fill-[#004fcb]" />
+      {/* 2. AI Interview CTA - PRIMARY ACTION */}
+      <button
+        onClick={() => navigate("/ai-interview")}
+        className="w-full bg-gradient-to-r from-[#004fcb] to-[#0063ff] hover:from-[#003bb5] hover:to-[#004fcb] text-white p-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group flex items-center justify-between relative overflow-hidden"
+      >
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+            <Bot className="w-6 h-6 text-white" />
           </div>
-          <div>
-            <h3 className="font-bold text-lg leading-tight text-gray-900">Master Interviews with Mock++</h3>
+          <div className="text-left">
+            <h3 className="font-bold text-white text-base">Start AI Interview</h3>
+            <p className="text-white/80 text-xs font-medium">Practice with AI Mock</p>
           </div>
         </div>
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl group-hover:scale-150 transition-transform"></div>
+      </button>
 
-        <p className="text-sm text-gray-600 leading-relaxed font-medium">
-          Get instant AI feedback, realistic practice, and personalized coaching to ace your next interview.
-        </p>
+      {/* 3. Navigation / Quick Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+        <div className="space-y-1">
+          <NavItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            path="/"
+            active={location.pathname === "/"}
+          />
+          <NavItem
+            icon={Calendar}
+            label="My Sessions"
+            path="/my-sessions"
+            active={location.pathname === "/my-sessions"}
+          />
+          <NavItem
+            icon={MessageSquare}
+            label="Messages"
+            path="/messages"
+            active={location.pathname === "/messages"}
+          />
+          <NavItem
+            icon={Bookmark}
+            label="Saved Experts"
+            path="/saved"
+            active={location.pathname === "/saved"}
+          />
+          <NavItem
+            icon={Settings}
+            label="Settings"
+            path="/settings"
+            active={location.pathname === "/settings"}
+          />
+        </div>
       </div>
+
+      {/* 4. Upcoming Session (Backend Connected) */}
+      {nextSession && (
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Upcoming Session
+            </h3>
+            <span className="text-[10px] font-bold bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100">
+              {new Date(nextSession.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 mb-3">
+            <img
+              src={getProfileImageUrl(nextSession.expertDetails?.profileImage)}
+              className="w-10 h-10 rounded-lg object-cover bg-gray-100 border border-gray-200"
+              alt="Expert"
+            />
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-gray-900 truncate">{nextSession.expertDetails?.name || "Expert"}</p>
+              <p className="text-xs text-gray-500 truncate">{nextSession.expertDetails?.role || "Mentor"}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg">
+            <Clock size={14} className="text-[#004fcb]" />
+            <span className="font-medium">
+              {new Date(nextSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className="text-gray-300">|</span>
+            <span>{Math.round((new Date(nextSession.endTime).getTime() - new Date(nextSession.startTime).getTime()) / 60000)} min</span>
+          </div>
+
+          <button
+            onClick={() => navigate('/my-sessions')}
+            className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white py-2 rounded-lg text-xs font-bold transition-colors"
+          >
+            <Video size={12} />
+            Join Meeting
+          </button>
+        </div>
+      )}
+
+      {/* 5. Promo/Resources */}
+      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-5 border border-blue-100 shadow-sm group cursor-pointer">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="p-2 bg-white rounded-lg border border-blue-100 shadow-sm text-[#004fcb]">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-gray-900">Premium Plan</h3>
+            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wide">Unlock Features</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 leading-relaxed mb-3">
+          Get unlimited AI interviews and priority booking access.
+        </p>
+        <button className="text-xs font-bold text-[#004fcb] group-hover:underline">
+          Upgrade Now →
+        </button>
+      </div>
+
     </div>
   );
 };

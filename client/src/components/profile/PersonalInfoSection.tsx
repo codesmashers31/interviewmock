@@ -30,6 +30,7 @@ interface PersonalInfoSectionProps {
 export default function PersonalInfoSection({ profileData, onUpdate }: PersonalInfoSectionProps) {
     const { user } = useAuth();
     const [formData, setFormData] = useState({
+        name: profileData?.name || "",
         phone: profileData?.personalInfo?.phone || "",
         dateOfBirth: profileData?.personalInfo?.dateOfBirth ? new Date(profileData.personalInfo.dateOfBirth).toISOString().split('T')[0] : "",
         gender: profileData?.personalInfo?.gender || "",
@@ -138,18 +139,18 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
-                <p className="text-gray-600 mt-1">Update your personal details and contact information</p>
+                <h2 className="text-xl font-bold text-[#002a6b]">Personal Information</h2>
+                <p className="text-slate-500 mt-1">Update your personal details and contact information</p>
             </div>
 
             {/* Profile Image Upload */}
-            <div className="border-b border-gray-200 pb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Profile Image</label>
+            <div className="border-b border-blue-50 pb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-3">Profile Image</label>
                 <div className="flex items-center gap-4">
                     <img
                         src={getProfileImageUrl(profileData?.profileImage)}
                         alt="Profile"
-                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                        className="w-20 h-20 rounded-xl object-cover border-2 border-blue-100"
                         onError={(e) => {
                             e.currentTarget.src = getProfileImageUrl(null);
                         }}
@@ -162,7 +163,7 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
                             className="hidden"
                             disabled={uploading}
                         />
-                        <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-[#004fcb] text-white rounded-lg hover:bg-[#003bb5] transition-colors shadow-sm shadow-blue-200">
                             <Upload className="w-4 h-4" />
                             {uploading ? "Uploading..." : "Upload New Photo"}
                         </div>
@@ -173,35 +174,46 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
             {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                    <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
+                        placeholder="Your full name"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
                     <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                         placeholder="+91 98765 43210"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Date of Birth</label>
                     <input
                         type="date"
                         name="dateOfBirth"
                         value={formData.dateOfBirth}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Gender</label>
                     <select
                         name="gender"
                         value={formData.gender}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                     >
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
@@ -211,12 +223,12 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Country</label>
                     <select
                         name="country"
                         value={formData.country}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                     >
                         <option value="">Select Country</option>
                         {countries.map((c) => (
@@ -229,12 +241,12 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">State</label>
                     <select
                         name="state"
                         value={formData.state}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                         disabled={!formData.country}
                     >
                         <option value="">{formData.country ? "Select State" : "Select Country First"}</option>
@@ -248,12 +260,12 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">City</label>
                     <select
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                         disabled={!formData.state}
                     >
                         <option value="">{formData.state ? "Select City" : "Select State First"}</option>
@@ -268,24 +280,24 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Bio</label>
                 <textarea
                     name="bio"
                     value={formData.bio}
                     onChange={handleChange}
                     rows={4}
                     maxLength={500}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-blue-100 bg-slate-50/50 rounded-lg focus:ring-2 focus:ring-[#004fcb]/20 focus:border-[#004fcb] transition-all"
                     placeholder="Tell us about yourself..."
                 />
-                <p className="text-sm text-gray-500 mt-1">{formData.bio.length}/500 characters</p>
+                <p className="text-sm text-slate-500 mt-1">{formData.bio.length}/500 characters</p>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-gray-200">
+            <div className="flex justify-end pt-4 border-t border-blue-50">
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-[#004fcb] text-white rounded-lg hover:bg-[#003bb5] transition-colors disabled:opacity-50 shadow-md shadow-blue-200"
                 >
                     <Save className="w-4 h-4" />
                     {saving ? "Saving..." : "Save Changes"}

@@ -162,6 +162,7 @@ type Session = {
 
 const MySessions = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -191,6 +192,7 @@ const MySessions = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
+        setLoading(true);
         const candidateId = user?.id;
         if (!candidateId) {
           console.warn("No user ID available");
@@ -254,12 +256,21 @@ const MySessions = () => {
           };
         });
 
-        setSessions(mappedSessions);
-        setFilteredSessions(mappedSessions);
+        // Sort by newest first
+        const sorted = mappedSessions.sort((a, b) => {
+          const timeA = new Date(a.startTime || 0).getTime();
+          const timeB = new Date(b.startTime || 0).getTime();
+          return timeB - timeA;
+        });
+
+        setSessions(sorted);
+        setFilteredSessions(sorted);
       } catch (err) {
         console.error("Failed to fetch sessions:", err);
         setSessions([]);
         setFilteredSessions([]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -503,6 +514,26 @@ const MySessions = () => {
     );
   };
 
+  const SessionCardSkeleton = () => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+      <div className="flex justify-between items-start mb-4">
+        <div className="space-y-2">
+          <div className="h-6 w-48 bg-gray-200 rounded"></div>
+          <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        </div>
+        <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+      </div>
+      <div className="space-y-3 mb-6">
+        <div className="h-4 w-full bg-gray-100 rounded"></div>
+        <div className="h-4 w-2/3 bg-gray-100 rounded"></div>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="h-8 w-24 bg-gray-200 rounded"></div>
+        <div className="h-10 w-28 bg-gray-200 rounded-lg"></div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
@@ -645,210 +676,122 @@ const MySessions = () => {
           </div>
 
           {/* Sessions Grid */}
-          {currentSessions.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-gray-400" />
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => <SessionCardSkeleton key={i} />)}
+            </div>
+          ) : currentSessions.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-xl border border-gray-200 border-dashed">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-[#004fcb]" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No sessions found</h3>
-              <p className="text-gray-500 mb-6">Try adjusting your search criteria</p>
-              <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setStatusFilter("all");
-                  setCategoryFilter("all");
-                }}
-                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-              >
-                Clear Filters
-              </button>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">No sessions found</h3>
+              <p className="text-gray-500">Your scheduled interviews will appear here.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentSessions.map((session) => (
                 <div
                   key={session.id}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 overflow-hidden group"
+                  className="group bg-white rounded-xl border border-gray-200 hover:border-[#004fcb] p-6 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col relative"
                 >
-                  {/* Header - Gray Theme */}
-                  <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-5 text-white">
-                    <div className="flex items-center gap-4">
-                      {session.profileImage ? (
-                        <img
-                          src={getProfileImageUrl(session.profileImage)}
-                          alt={session.expert}
-                          className="w-14 h-14 rounded-lg object-cover border-2 border-white/30 shadow-md"
-                          onError={(e) => {
-                            e.currentTarget.src = getProfileImageUrl(null);
-                          }}
-                        />
-                      ) : null}
-                      <div className={`w-14 h-14 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-xl border border-white/30 ${session.profileImage ? 'hidden' : ''}`}>
+                  {/* Top Section: Role & Company */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#004fcb] transition-colors line-clamp-1">
+                        {session.role}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm font-medium text-gray-700">{session.company}</span>
+                        {session.expert && (
+                          <span className="text-xs text-gray-500">• {session.expert}</span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Square Profile Image */}
+                    {session.profileImage ? (
+                      <img
+                        src={getProfileImageUrl(session.profileImage)}
+                        alt={session.expert}
+                        className="w-12 h-12 rounded-lg object-cover border border-gray-100 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-blue-50 text-[#004fcb] flex items-center justify-center font-bold text-lg border border-blue-100">
                         {session.expert.charAt(0)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="font-bold text-lg truncate">{session.expert}</h2>
-                        <p className="text-white/90 text-sm truncate">{session.role}</p>
-                        <p className="text-white/80 text-xs truncate">{session.company}</p>
-                      </div>
+                    )}
+                  </div>
+
+                  {/* Meta Info: Location, Price, Duration */}
+                  <div className="space-y-2 mb-6">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <span>{session.location || 'Remote'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span>{session.date} • {session.time}</span>
+                    </div>
+                    <div className="font-semibold text-gray-900 mt-2">
+                      {session.price}
                     </div>
                   </div>
 
-                  {/* Session Details */}
-                  <div className="p-5">
-                    {/* Status and Rating */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(session.status)}`}>
-                        {getStatusIcon(session.status)} {session.status}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium text-gray-700">{session.rating}</span>
-                        <span className="text-gray-400 text-xs">({session.reviews})</span>
-                      </div>
-                    </div>
-
-                    {/* Countdown Timer for Upcoming Sessions */}
-                    {!isSessionEnded(session) && session.startTime && (
-                      <div className="mb-4">
-                        <CountdownTimer startTime={session.startTime} />
-                      </div>
+                  {/* Actions */}
+                  <div className="mt-auto flex items-center gap-3">
+                    {/* Primary Button (Like 'Apply Now') */}
+                    {isSessionEnded(session) ? (
+                      <button
+                        onClick={() => setReviewSession(session)}
+                        className="flex-1 bg-white border border-[#004fcb] text-[#004fcb] py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Star className="w-4 h-4" />
+                        Rate Expert
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleJoinMeeting(session)}
+                        disabled={!isSessionActive(session)}
+                        className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${isSessionActive(session)
+                          ? "bg-[#004fcb] text-white hover:bg-[#003bb5] shadow-sm shadow-blue-200"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" // Disabled look
+                          }`}
+                      >
+                        <Video className="w-4 h-4" />
+                        {isSessionActive(session) ? "Join Meeting" : "Join Later"}
+                      </button>
                     )}
 
-                    {/* Session Info */}
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                        <span>{session.date}</span>
-                        {session.startTime && session.endTime ? (
-                          <>
-                            <span className="text-gray-300">•</span>
-                            <Clock className="w-4 h-4 text-gray-500" />
-                            <span>
-                              {new Date(session.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })} - {new Date(session.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="truncate">{session.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span>{session.category}</span>
-                        <span className="text-gray-300">•</span>
-                        <span>{session.duration}</span>
-                      </div>
-                    </div>
+                    {/* Secondary Action (Menu or Review) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
+                        className="p-2.5 rounded-lg border border-gray-200 hover:border-[#004fcb] hover:text-[#004fcb] transition-colors"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-500" />
+                      </button>
 
-                    {/* Expertise Tags */}
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {session.expertise.slice(0, 3).map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md font-medium"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                      {session.expertise.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
-                          +{session.expertise.length - 3}
-                        </span>
+                      {openDropdownId === session.sessionId && (
+                        <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                          <button
+                            onClick={() => handleFetchReviews(session, 'expert_feedback')}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                          >
+                            Expert Feedback
+                          </button>
+                          <button
+                            onClick={() => handleFetchReviews(session, 'my_review')}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            My Review
+                          </button>
+                        </div>
+                      )}
+                      {/* Overlay to close */}
+                      {openDropdownId === session.sessionId && (
+                        <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
                       )}
                     </div>
-                    {/* Price and Actions */}
-                    <div className="flex items-center justify-between">
-                      <div className="text-xl font-bold text-gray-900">{session.price}</div>
-                      <div className="flex gap-2">
-                        {isSessionEnded(session) ? (
-                          <button
-                            onClick={() => {
-                              setReviewSession(session);
-                            }}
-                            className="px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1 border-gray-300 text-gray-700 hover:bg-green-50 hover:text-green-700 hover:border-green-200"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                            Review
-                          </button>
-                        ) : (
-                          <div className="relative group/tooltip">
-                            <button
-                              onClick={() => handleJoinMeeting(session)}
-                              disabled={!isSessionActive(session)}
-                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${isSessionActive(session)
-                                ? "bg-gray-900 text-white hover:bg-gray-800"
-                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                }`}
-                            >
-                              <Video className="w-4 h-4" />
-                              Join
-                            </button>
-                            {!isSessionActive(session) && (
-                              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-10">
-                                {getSessionStatusInfo(session).reason}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* 3-Dot Dropdown */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
-                            className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {openDropdownId === session.sessionId && (
-                            <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                              <button
-                                onClick={() => handleFetchReviews(session, 'expert_feedback')}
-                                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
-                              >
-                                View Expert Feedback
-                              </button>
-                              <button
-                                onClick={() => handleFetchReviews(session, 'my_review')}
-                                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                              >
-                                View My Review
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Click outside listener could be added here or top level */}
-                          {openDropdownId === session.sessionId && (
-                            <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Review Badge for Completed Sessions */}
-                    {session.status === "Completed" && session.expertReview && (
-                      <div className={`mt-4 p-3 rounded-lg border flex items-center justify-between ${session.expertReview.overallRating >= 4 ? 'bg-green-50 border-green-200 text-green-800' :
-                        session.expertReview.overallRating >= 3 ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
-                          'bg-red-50 border-red-200 text-red-800'
-                        }`}>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">
-                            {session.expertReview.overallRating >= 4 ? '🏆' :
-                              session.expertReview.overallRating >= 3 ? '👍' : '⚠️'}
-                          </span>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold">
-                              {session.expertReview.overallRating >= 4 ? 'Excellent' :
-                                session.expertReview.overallRating >= 3 ? 'Good' : 'Needs Work'}
-                            </span>
-                            <span className="text-xs opacity-80">Expert Feedback</span>
-                          </div>
-                        </div>
-                        <span className="font-bold text-lg bg-white/50 px-2 py-1 rounded">{session.expertReview.overallRating}/5</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
@@ -1011,25 +954,7 @@ const MySessions = () => {
             </div>
           )}
 
-          {/* Support Card */}
-          <div className="bg-gray-900 rounded-xl p-6 text-white mt-8">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-1">Need Help?</h3>
-                <p className="text-gray-400 text-sm mb-3">
-                  Our support team is here to help you with session-related queries
-                </p>
-                <button className="bg-gray-800 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm">
-                  Contact Support
-                </button>
-              </div>
-            </div>
-          </div>
+
         </div>
 
         <BottomNav />
