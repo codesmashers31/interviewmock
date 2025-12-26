@@ -8,7 +8,7 @@ export default function ExpertLayout({ active = "dashboard", children }: { activ
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-white">
       <div className="flex">
         <SideNav isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

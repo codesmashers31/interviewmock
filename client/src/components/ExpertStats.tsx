@@ -20,10 +20,10 @@ const ExpertStats = () => {
 
   function StatCard({ title, value, sub, icon, trend, color = 'blue' }: StatCardProps) {
     const colorClasses = {
-      blue: 'border-blue-200 bg-blue-50',
-      green: 'border-green-200 bg-green-50',
-      purple: 'border-purple-200 bg-purple-50',
-      orange: 'border-orange-200 bg-orange-50',
+      blue: 'border-blue-100 bg-white hover:border-blue-600',
+      green: 'border-blue-100 bg-white hover:border-blue-600',
+      purple: 'border-blue-100 bg-white hover:border-blue-600',
+      orange: 'border-blue-100 bg-white hover:border-blue-600',
     };
 
     const iconClasses = {
@@ -108,14 +108,14 @@ const ExpertStats = () => {
           sub="Next 7 days"
           icon={icons.upcoming}
           trend={25}
-          color="green"
+          color="blue"
         />
         <StatCard
           title="Today's Bookings"
           value={statsMock.todaysBookings}
           sub="Scheduled today"
           icon={icons.today}
-          color="purple"
+          color="blue"
         />
         <StatCard
           title="Expert Rating"
@@ -123,7 +123,7 @@ const ExpertStats = () => {
           sub="Out of 5.0"
           icon={icons.rating}
           trend={2.1}
-          color="orange"
+          color="blue"
         />
       </div>
 

@@ -1,20 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Star,
   MapPin,
   Clock,
   Users,
   Shield,
-  TrendingUp,
   Briefcase,
   Code,
   PenTool,
   BarChart3,
   DollarSign,
   Brain,
-  Calendar,
   CheckCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -72,7 +68,6 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   const navigate = useNavigate();
 
   const handleBookNow = () => {
-
     navigate(`/book-session`, {
       state: {
         profile: profile,
@@ -82,180 +77,104 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   };
 
   return (
-    <div className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 h-full flex flex-col overflow-hidden border border-gray-200 hover:border-gray-300">
-      {/* Header Section */}
-      <div className="relative p-6 bg-gradient-to-r from-gray-800 to-gray-900">
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <div className="relative flex-shrink-0">
-            <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg">
-              <img
-                src={profile.avatar}
-                alt={profile.name}
-                className="w-full h-full rounded-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = getProfileImageUrl(null);
-                }}
-              />
-            </div>
-            {profile.isVerified && (
-              <div className="absolute -bottom-1 -right-1 bg-green-600 rounded-full p-1.5 shadow border-2 border-white">
-                <Shield className="w-4 h-4 text-white" />
-              </div>
-            )}
-          </div>
-
-          {/* Name and Experience */}
-          <div className="flex-1 min-w-0 pt-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-xl text-white truncate">
-                {profile.name}
-              </h3>
-            </div>
-
-            {/* Industry | Title Badge */}
-            <div className="mb-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 text-white text-xs font-semibold rounded-full">
-                {profile.industry} | {profile.role}
-              </span>
-            </div>
-
-            {/* Experience */}
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 text-white text-xs font-semibold rounded-full">
-                <Briefcase className="w-3 h-3" />
-                {profile.experience}
-              </span>
-            </div>
+    <div className="group bg-white rounded-lg border border-gray-300 hover:border-blue-700 p-5 h-full flex flex-col transition-all duration-200 relative shadow-sm hover:shadow-md">
+      {/* Top Section: Role, Name, Location & Avatar */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1 pr-2">
+          {/* Role / Job Title - Looks like Job Posting */}
+          <h3 className="font-bold text-lg text-gray-900 group-hover:underline decoration-2 underline-offset-2 mb-0.5">
+            {profile.role}
+          </h3>
+          {/* Name & Company */}
+          <p className="text-gray-800 font-medium text-sm mb-1">
+            {profile.name} {profile.company ? `• ${profile.company}` : ''}
+          </p>
+          {/* Location */}
+          <div className="flex items-center text-gray-500 text-sm mb-3">
+            <MapPin className="w-3 h-3 mr-1" />
+            {profile.location}
           </div>
         </div>
-      </div>
 
-      {/* Location */}
-      <div className="px-6 pt-4 pb-3">
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-          <span className="font-medium text-gray-700">{profile.location}</span>
-        </div>
-      </div>
-
-      {/* Availability */}
-      <div className="px-6 pb-3">
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
-          <span className="font-medium text-gray-700">{profile.availableTime}</span>
-        </div>
-      </div>
-
-      {/* Company & Role */}
-      <div className="px-6 pb-4">
-        <div className="flex items-center gap-2 text-sm">
-          <Briefcase className="w-4 h-4 text-gray-500 flex-shrink-0" />
-          <span className="font-medium text-gray-700">{profile.company} | {profile.role}</span>
-        </div>
-      </div>
-
-      {/* Skills Section */}
-      <div className="px-6 pb-4">
-        <p className="text-xs font-semibold text-gray-500 mb-2">Skills</p>
-        <div className="flex flex-wrap gap-2">
-          {profile.skills.slice(0, 4).map((skill, idx) => (
-            <span
-              key={idx}
-              className="px-3 py-1.5 bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg border border-gray-200"
-            >
-              {skill}
-            </span>
-          ))}
-          {profile.skills.length > 4 && (
-            <span className="px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-lg">
-              +{profile.skills.length - 4} more
-            </span>
+        {/* Avatar as a 'Logo' style */}
+        <div className="relative">
+          <img
+            src={profile.avatar}
+            alt={profile.name}
+            className="w-12 h-12 rounded-lg object-cover border border-gray-100"
+            onError={(e) => {
+              e.currentTarget.src = getProfileImageUrl(null);
+            }}
+          />
+          {profile.isVerified && (
+            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-gray-100">
+              <Shield className="w-3 h-3 text-blue-700 fill-current" />
+            </div>
           )}
         </div>
       </div>
 
-      {/* Languages Section */}
-      {profile.languages && profile.languages.length > 0 && (
-        <div className="px-6 pb-4">
-          <p className="text-xs font-semibold text-gray-500 mb-2">Languages</p>
-          <div className="flex flex-wrap gap-2">
-            {profile.languages.slice(0, 3).map((language, idx) => (
-              <span
-                key={idx}
-                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200"
-              >
-                {language}
-              </span>
-            ))}
-            {profile.languages.length > 3 && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-500 text-xs font-medium rounded">
-                +{profile.languages.length - 3} more
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Badges / Skills - Indeed Gray Pills */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {/* Experience Pill */}
+        <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2 py-1 rounded">
+          {profile.experience}
+        </span>
+        {/* Mode Pill */}
+        <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2 py-1 rounded">
+          {profile.mode}
+        </span>
+        {/* Skills */}
+        {profile.skills.slice(0, 2).map((skill, idx) => (
+          <span
+            key={idx}
+            className="bg-gray-100 text-gray-700 text-xs font-bold px-2 py-1 rounded"
+          >
+            {skill}
+          </span>
+        ))}
+        {profile.skills.length > 2 && (
+          <span className="text-gray-500 text-xs flex items-center px-1">
+            +{profile.skills.length - 2} more
+          </span>
+        )}
+      </div>
 
-      {/* Stats Section */}
-      <div className="px-6 pb-5">
-        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          {/* Rating */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1.5">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-sm font-semibold text-gray-900">
-                {profile.rating > 0 ? profile.rating.toFixed(1) : "New"}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500">{profile.reviews} reviews</p>
+      {/* Metrics Row (Review/Rating) */}
+      <div className="mb-4 flex items-center gap-4 text-xs text-gray-600">
+        {profile.reviews > 0 && (
+          <div className="flex items-center gap-1">
+            <Star className="w-3 h-3 text-gray-700 fill-gray-700" />
+            <span className="font-bold text-gray-900">{profile.rating.toFixed(1)}</span>
+            <span className="text-gray-500">({profile.reviews} reviews)</span>
           </div>
-
-          {/* Success Rate */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1.5">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-semibold text-gray-900">
-                {profile.successRate}%
-              </span>
-            </div>
-            <p className="text-xs text-gray-500">Success</p>
-          </div>
-
-          {/* Mode */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1.5">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-semibold text-gray-900">
-                {profile.mode}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500">Mode</p>
-          </div>
+        )}
+        <div className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          <span>{profile.responseTime} response</span>
         </div>
       </div>
 
-      {/* Footer with Price and Book Button */}
-      <div className="px-6 pb-6 mt-auto">
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div>
-            <p className="text-xs text-gray-500 font-medium mb-1">Session Price</p>
-            <p className="text-xl font-bold text-gray-900">{profile.price}</p>
-          </div>
-          <button
-            className="px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200"
-            onClick={handleBookNow}
-          >
-            Book Now
-          </button>
+      {/* Footer: Price & Action */}
+      <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+        <div className="flex flex-col">
+          <span className="text-lg font-bold text-gray-900">{profile.price}</span>
+          <span className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">Per Session</span>
         </div>
+
+        <button
+          onClick={handleBookNow}
+          className="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-full transition-colors self-center"
+        >
+          Book Now
+        </button>
       </div>
     </div>
   );
 };
 
-// Carousel Component
-const Carousel = ({
+// Category Grid Component (2-Column Layout)
+const CategoryGrid = ({
   title,
   category,
   profiles
@@ -264,76 +183,30 @@ const Carousel = ({
   category: Category;
   profiles: Profile[];
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
   const filteredProfiles = profiles.filter((p) => p.category === category);
   const Icon = getCategoryIcon(category);
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const cardWidth = 384;
-      const gap = 16;
-      const scrollAmount = (cardWidth + gap) * 2;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth"
-      });
-    }
-  };
-
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
+  if (filteredProfiles.length === 0) return null;
 
   return (
     <div className="mb-12">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gray-800 rounded-lg shadow-sm">
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-            <p className="text-sm text-gray-600 mt-0.5">
-              {filteredProfiles.length} expert{filteredProfiles.length !== 1 ? "s" : ""} available
-            </p>
-          </div>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2.5 bg-gray-100 rounded-lg border border-gray-200">
+          <Icon className="w-5 h-5 text-gray-700" />
         </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => scroll("left")}
-            disabled={!canScrollLeft}
-            className="p-2.5 rounded-lg bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <button
-            onClick={() => scroll("right")}
-            disabled={!canScrollRight}
-            className="p-2.5 rounded-lg bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-700" />
-          </button>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <p className="text-sm text-gray-600">
+            {filteredProfiles.length} expert{filteredProfiles.length !== 1 ? "s" : ""} available
+          </p>
         </div>
       </div>
 
-      {/* Cards Carousel */}
-      <div
-        ref={scrollRef}
-        onScroll={checkScroll}
-        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
-      >
+      {/* Grid Layout - 2 Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredProfiles.map((profile) => (
-          <div key={profile.id} className="flex-none w-96">
+          <div key={profile.id} className="h-full">
             <ProfileCard profile={profile} />
           </div>
         ))}
@@ -698,11 +571,11 @@ export default function CoachSessionCard() {
           </div>
         )}
 
-        {/* Show carousels only for categories that have experts */}
+        {/* Show Grids only for categories that have experts */}
         {!loading && !error && allProfiles.length > 0 && categories
           .filter(cat => allProfiles.some(profile => profile.category === cat.id))
           .map(cat => (
-            <Carousel
+            <CategoryGrid
               key={cat.id}
               title={cat.name}
               category={cat.id}

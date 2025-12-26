@@ -14,7 +14,7 @@ const Index = () => {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col bg-linear-to-br from-background via-muted/20 to-background">
+      <div className="min-h-screen flex flex-col bg-white font-sans text-gray-900">
         <Navigation />
         <HeroSection />
 

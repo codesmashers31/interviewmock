@@ -225,7 +225,7 @@ export function MultiSelect({
 export default function ExpertDashboard() {
   return (
     <Layout active="dashboard">
-      <div className="p-6 bg-gray-100 min-h-screen">
+      <div className="p-6 bg-white min-h-screen">
 
         <ExpertStats />
 
