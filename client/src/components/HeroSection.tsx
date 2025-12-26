@@ -20,15 +20,14 @@ const ModernHeroBanner = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
-  
+
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-      
-      {/* Soft Glow Effect */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gray-100 rounded-full blur-3xl opacity-50" />
+
+      {/* Soft Glow Effect Removed */}
 
       <div className="relative max-w-7xl mx-auto px-6 py-12">
         {/* Main Hero Content */}
@@ -40,32 +39,26 @@ const ModernHeroBanner = () => {
               {roles.map((role, idx) => (
                 <span
                   key={idx}
-                  className={`absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent transition-all duration-700 ${
-                    idx === currentRole ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'
-                  }`}
-                  style={{
-                    textShadow: idx === currentRole ? '0 0 40px rgba(0,0,0,0.1)' : 'none'
-                  }}
+                  className={`absolute inset-0 text-gray-900 transition-all duration-700 ${idx === currentRole ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'
+                    }`}
                 >
                   {role.text}
                 </span>
               ))}
               <span className="opacity-0">{roles[0].text}</span>
-              {/* Animated underline */}
-              <div className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gray-900 to-transparent opacity-30"></div>
             </span>
           </h1>
 
           <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Master interviews with AI-powered mock sessions and real HR practice. 
+            Master interviews with AI-powered mock sessions and real HR practice.
             Get placed faster at top companies.
           </p>
 
           {/* Feature Pills */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             {["AI Feedback", "Real HR Practice", "24/7 Available", "Company-Specific Prep"].map((feature, idx) => (
-              <div key={idx} className="px-5 py-2.5 bg-gray-100 border border-gray-200 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-all duration-300">
-                <CheckCircle className="w-4 h-4 inline mr-2 text-gray-600" />
+              <div key={idx} className="px-5 py-2.5 bg-blue-50 border border-blue-100 rounded-full text-sm text-[#004fcb] hover:bg-blue-100 transition-all duration-300">
+                <CheckCircle className="w-4 h-4 inline mr-2 text-[#004fcb]" />
                 {feature}
               </div>
             ))}
@@ -73,11 +66,11 @@ const ModernHeroBanner = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-16">
-            <button className="group px-10 py-5 bg-gray-900 text-white rounded-2xl font-semibold text-lg hover:bg-gray-800 transition-all hover:scale-105 flex items-center gap-2 shadow-xl">
+            <button className="group px-10 py-5 bg-[#004fcb] text-white rounded-2xl font-semibold text-lg hover:bg-[#003bb5] transition-all hover:scale-105 flex items-center gap-2 shadow-lg shadow-blue-900/20">
               Start Free Mock Interview
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="px-10 py-5 bg-white border-2 border-gray-200 rounded-2xl font-semibold text-lg hover:bg-gray-50 transition-all flex items-center gap-2">
+            <button className="px-10 py-5 bg-white border-2 border-gray-200 rounded-2xl font-semibold text-lg hover:bg-blue-50 hover:border-[#004fcb] hover:text-[#004fcb] transition-all flex items-center gap-2">
               <Play className="w-5 h-5" />
               Watch Demo
             </button>
@@ -88,7 +81,7 @@ const ModernHeroBanner = () => {
             <p className="text-sm text-gray-500 mb-6 uppercase tracking-wider">Students placed at top companies</p>
             <div className="flex flex-wrap justify-center gap-10 items-center">
               {companies.map((company, idx) => (
-                <div key={idx} className="text-xl font-semibold text-gray-400 hover:text-gray-900 transition-colors cursor-default">
+                <div key={idx} className="text-xl font-semibold text-gray-400 hover:text-[#004fcb] transition-colors cursor-default">
                   {company}
                 </div>
               ))}
@@ -97,16 +90,16 @@ const ModernHeroBanner = () => {
         </div>
 
         {/* Bottom CTA Banner */}
-        <div className="mt-24 p-10 bg-gray-50 border border-gray-200 rounded-3xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="mt-12 p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-center md:text-left">
-              <div className="text-sm text-gray-500 font-semibold mb-2 uppercase tracking-wider">Ready to get started?</div>
-              <h3 className="text-3xl font-bold mb-2 text-gray-900">Chennai's #1 Interview Prep Platform</h3>
-              <p className="text-gray-600 text-lg">Join thousands who landed their dream jobs</p>
+              <div className="text-xs text-[#004fcb] font-semibold mb-1 uppercase tracking-wider">Ready to get started?</div>
+              <h3 className="text-xl font-bold mb-1 text-gray-900">Chennai's #1 <span className="text-[#004fcb]">Interview Prep Platform</span></h3>
+              <p className="text-gray-600 text-sm">Join thousands who landed their dream jobs</p>
             </div>
-            <button className="whitespace-nowrap px-10 py-5 bg-gray-900 text-white rounded-2xl font-semibold text-lg hover:bg-gray-800 transition-all hover:scale-105 flex items-center gap-2 shadow-xl">
+            <button className="whitespace-nowrap px-6 py-3 bg-[#004fcb] text-white rounded-xl font-semibold text-sm hover:bg-[#003bb5] transition-all hover:scale-105 flex items-center gap-2 shadow-md shadow-blue-900/10">
               Get Started Free
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

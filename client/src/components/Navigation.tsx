@@ -241,20 +241,36 @@ const Navigation = () => {
               </Link>
 
               <div className="hidden md:flex space-x-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="flex items-center px-3 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-lg hover:bg-gray-50/80 group relative whitespace-nowrap"
-                    onClick={closeAllDropdowns}
-                  >
-                    <span className="mr-2 text-gray-600 group-hover:text-gray-900 transition-colors hidden xl:inline">
-                      {item.icon}
-                    </span>
-                    {item.name}
-                    <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-900 group-hover:w-full transition-all duration-300"></div>
-                  </Link>
-                ))}
+                {navItems.map((item) => {
+                  // Active if path matches exactly OR starts with href (if not home)
+                  const isActive = location.pathname === item.href || (location.pathname.startsWith(item.href) && item.href !== "/");
+
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`flex items-center px-3 py-2 text-sm font-bold transition-all duration-200 rounded-lg group relative whitespace-nowrap ${isActive ? "text-[#004fcb]" : "text-gray-700 hover:text-[#004fcb] hover:bg-blue-50/80"
+                        }`}
+                      onClick={closeAllDropdowns}
+                    >
+                      <span className={`mr-2 transition-colors hidden xl:inline ${isActive ? "text-[#004fcb]" : "text-gray-500 group-hover:text-[#004fcb]"
+                        }`}>
+                        {item.icon}
+                      </span>
+                      {item.name}
+
+                      {/* Active Line (Custom Blue) - Persistent when active */}
+                      {isActive && (
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#004fcb] transition-all duration-300"></div>
+                      )}
+
+                      {/* Hover Line (Custom Blue) - Animate in when hovering inactive items */}
+                      {!isActive && (
+                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#004fcb] transition-all duration-300 w-0 group-hover:w-full"></div>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 

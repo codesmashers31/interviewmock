@@ -3,8 +3,6 @@ import Sidebar from "../components/Sidebar";
 import CoachSessionCard from "../components/CoachSessionCard";
 import InfoPanel from "../components/InfoPanel";
 import Footer from "../components/Footer";
-import PromoBanner from "../components/PromoBanner";
-import HeroSection from "../components/HeroSection";
 import BottomNav from "../components/BottomNav";
 import { useAuth } from "../context/AuthContext";
 
@@ -16,8 +14,6 @@ const Index = () => {
     <>
       <div className="min-h-screen flex flex-col bg-white font-sans text-gray-900">
         <Navigation />
-        <HeroSection />
-
         <main className="container mx-auto flex-1 px-2 sm:px-6 md:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Sidebar (desktop only) */}
@@ -29,7 +25,7 @@ const Index = () => {
 
             {/* Main content */}
             <section className={`order-2 w-full ${showProfile ? 'lg:col-span-6' : 'lg:col-span-12'}`}>
-              <PromoBanner />
+              {/* <PromoBanner /> */}
               <CoachSessionCard />
             </section>
 

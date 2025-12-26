@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Star, MapPin, Phone, Sparkles, Edit3, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp, MapPin, Edit3, User, Sparkles } from "lucide-react";
 import axios from '../lib/axios';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -8,8 +8,8 @@ import { getProfileImageUrl } from "../lib/imageUtils";
 const Sidebar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
-  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded or collapsed based on preference, user asked for "small card" so maybe default collapsed or small? Let's default open but it's small. Actually user said "small card... using some collapt".
+  // Let's implement a toggle.
   const [profileData, setProfileData] = useState<any>(null);
 
   useEffect(() => {
@@ -32,171 +32,106 @@ const Sidebar = () => {
 
   if (!profileData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="flex justify-center p-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#004fcb]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-xs mx-auto">
+    <div className="w-full max-w-xs mx-auto">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
 
-        {/* White Card */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-100">
-
-          {/* Top section with pattern */}
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-center relative">
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl"></div>
-            </div>
-
-            {/* Avatar */}
-            <div className="relative z-10 flex justify-center mb-4">
-              <div className="relative">
-                <img
-                  src={getProfileImageUrl(profileData.profileImage)}
-                  alt={profileData.name}
-                  className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-xl"
-                  onError={(e) => {
-                    e.currentTarget.src = getProfileImageUrl(null);
-                  }}
-                />
-                <div className="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-3 border-white"></div>
-              </div>
-            </div>
-
-            {/* Verification badge */}
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <span className="text-white font-bold text-lg">{profileData.name}</span>
-              <Star size={16} className="text-yellow-300 fill-yellow-300" />
-            </div>
-          </div>
-
-          {/* Content section */}
-          <div className="p-6 space-y-5">
-
-            {/* Role and Org */}
-            <div className="text-center">
-              <p className="text-gray-900 font-semibold text-sm">
+        {/* Header / Summary Section // Always visible */}
+        <div
+          className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <img
+              src={getProfileImageUrl(profileData.profileImage)}
+              alt={profileData.name}
+              className="w-12 h-12 rounded-full object-cover border-2 border-[#004fcb]"
+              onError={(e) => {
+                e.currentTarget.src = getProfileImageUrl(null);
+              }}
+            />
+            <div>
+              <h3 className="font-bold text-gray-900 leading-tight">{profileData.name}</h3>
+              <p className="text-xs text-[#004fcb] font-medium">
                 {profileData.experience && profileData.experience.length > 0
                   ? profileData.experience[0].position
                   : "Member"}
               </p>
-              <p className="text-gray-600 text-xs mt-1">
-                {profileData.experience && profileData.experience.length > 0
-                  ? profileData.experience[0].company
-                  : "MockApp"}
-              </p>
+            </div>
+          </div>
+          <button className="text-gray-400 hover:text-[#004fcb] transition-colors">
+            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+        </div>
+
+        {/* Expanded Content */}
+        {isExpanded && (
+          <div className="px-4 pb-4 bg-white border-t border-gray-100">
+
+            {/* Quick Stats / Info */}
+            <div className="py-4 space-y-3">
+              {/* Completion Bar */}
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="font-medium text-gray-600">Profile Completion</span>
+                  <span className="font-bold text-[#004fcb]">{profileData.profileCompletion || 0}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-[#004fcb] h-full rounded-full"
+                    style={{ width: `${profileData.profileCompletion || 0}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Contact Snippets */}
+              <div className="space-y-2 text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <User size={14} className="text-[#004fcb]" />
+                  <span className="truncate">{profileData.email}</span>
+                </div>
+                {profileData.personalInfo?.city && (
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-[#004fcb]" />
+                    <span>{profileData.personalInfo.city}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-gray-200"></div>
-
-            {/* Profile Completion */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-900 text-sm font-medium">Profile Updated</span>
-                <span className="text-gray-600 font-bold text-sm">{profileData.profileCompletion || 0}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-gray-900 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${profileData.profileCompletion || 0}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-gray-200"></div>
-
-            {/* Contact Info */}
-            <div className="space-y-3">
-              {profileData.personalInfo?.phone && (
-                <div className="flex items-center gap-3 text-gray-700 text-sm">
-                  <Phone size={16} className="text-blue-500 shrink-0" />
-                  <span>{profileData.personalInfo.phone}</span>
-                </div>
-              )}
-              {profileData.personalInfo?.city && (
-                <div className="flex items-center gap-3 text-gray-700 text-sm">
-                  <MapPin size={16} className="text-blue-500 shrink-0" />
-                  <span>{profileData.personalInfo.city}, {profileData.personalInfo.state}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-gray-200"></div>
-
-            {/* Like button */}
-            <button
-              onClick={() => setLiked(!liked)}
-              className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-lg transition font-medium"
-            >
-              <Heart
-                size={18}
-                className={liked ? "fill-red-500 text-red-500" : ""}
-              />
-              <span>{liked ? "Liked" : "Like Profile"}</span>
-            </button>
-
-            {/* AI Edit Button */}
-            <button
-              onClick={() => setShowAiSuggestions(!showAiSuggestions)}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-900 hover:from-blue-600 hover:to-indigo-700 text-white py-3 rounded-lg transition font-medium"
-            >
-              <Sparkles size={18} />
-              <span>AI Edit Profile</span>
-            </button>
-
-            {/* AI Suggestions */}
-            {showAiSuggestions && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <Zap size={16} className="text-blue-600 mt-1 shrink-0" />
-                  <div className="text-sm">
-                    <p className="text-gray-800 font-medium">Add Work Experience</p>
-                    <p className="text-gray-600 text-xs mt-1">Boost your profile by 15%</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Zap size={16} className="text-blue-600 mt-1 shrink-0" />
-                  <div className="text-sm">
-                    <p className="text-gray-800 font-medium">Upload Portfolio</p>
-                    <p className="text-gray-600 text-xs mt-1">Increase visibility by 10%</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Zap size={16} className="text-gray-600 mt-1 shrink-0" />
-                  <div className="text-sm">
-                    <p className="text-gray-800 font-medium">Write Bio Summary</p>
-                    <p className="text-gray-600 text-xs mt-1">Complete your profile</p>
-                  </div>
-                </div>
-                <button className="w-full bg-gray-600 hover:bg-blue-700 text-white py-2 rounded-lg transition text-sm font-medium mt-3">
-                  Apply AI Suggestions
-                </button>
-              </div>
-            )}
-
-            {/* Edit Profile button */}
+            {/* AI Action Button (Simplified) */}
             <button
               onClick={() => navigate("/profile")}
-              className="w-full bg-gray-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-medium flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 bg-[#004fcb] hover:bg-[#003bb5] text-white py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm shadow-blue-900/10"
             >
-              <Edit3 size={18} />
+              <Edit3 size={16} />
               Edit Profile
             </button>
-          </div>
 
-          {/* Footer */}
-          <div className="bg-blue-50 px-6 py-4 text-center border-t border-blue-100">
-            <p className="text-gray-600 text-xs">
-              Member since {profileData.createdAt ? new Date(profileData.createdAt).getFullYear() : "2024"}
-            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Promo Content */}
+      <div className="mt-4 bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+            <Sparkles className="w-5 h-5 text-[#004fcb] fill-[#004fcb]" />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg leading-tight text-gray-900">Master Interviews with Mock++</h3>
           </div>
         </div>
+
+        <p className="text-sm text-gray-600 leading-relaxed font-medium">
+          Get instant AI feedback, realistic practice, and personalized coaching to ace your next interview.
+        </p>
       </div>
     </div>
   );

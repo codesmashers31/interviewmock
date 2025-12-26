@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Star,
   MapPin,
@@ -11,11 +11,14 @@ import {
   BarChart3,
   DollarSign,
   Brain,
-  CheckCircle
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
 import { getProfileImageUrl } from "../lib/imageUtils";
+import { useAuth } from "../context/AuthContext";
 
 // Types
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
@@ -77,7 +80,7 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   };
 
   return (
-    <div className="group bg-white rounded-lg border border-gray-300 hover:border-blue-700 p-5 h-full flex flex-col transition-all duration-200 relative shadow-sm hover:shadow-md">
+    <div className="group bg-white rounded-lg border border-gray-300 hover:border-[#004fcb] p-5 h-full flex flex-col transition-all duration-200 relative shadow-sm hover:shadow-md">
       {/* Top Section: Role, Name, Location & Avatar */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 pr-2">
@@ -108,7 +111,7 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
           />
           {profile.isVerified && (
             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-gray-100">
-              <Shield className="w-3 h-3 text-blue-700 fill-current" />
+              <Shield className="w-3 h-3 text-[#004fcb] fill-current" />
             </div>
           )}
         </div>
@@ -164,7 +167,7 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
 
         <button
           onClick={handleBookNow}
-          className="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-full transition-colors self-center"
+          className="px-5 py-2 bg-[#004fcb] hover:bg-[#003bb5] text-white text-sm font-bold rounded-full transition-colors self-center"
         >
           Book Now
         </button>
@@ -173,40 +176,115 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   );
 };
 
-// Category Grid Component (2-Column Layout)
+// Skeleton Loader Component
+const SkeletonCard = () => (
+  <div className="bg-white rounded-lg border border-gray-200 p-5 h-full flex flex-col relative animate-pulse">
+    <div className="flex justify-between items-start mb-3">
+      <div className="flex-1 pr-2 space-y-2">
+        <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+      </div>
+      <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+    </div>
+    <div className="flex flex-wrap gap-2 mb-4">
+      <div className="h-6 w-16 bg-gray-200 rounded"></div>
+      <div className="h-6 w-16 bg-gray-200 rounded"></div>
+      <div className="h-6 w-16 bg-gray-200 rounded"></div>
+    </div>
+    <div className="mb-4 flex gap-4">
+      <div className="h-3 w-12 bg-gray-200 rounded"></div>
+      <div className="h-3 w-12 bg-gray-200 rounded"></div>
+    </div>
+    <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center">
+      <div className="h-8 w-20 bg-gray-200 rounded"></div>
+      <div className="h-9 w-24 bg-gray-200 rounded-full"></div>
+    </div>
+  </div>
+);
+
+// Category Grid Component (Horizontal Scroll / Carousel with Arrows)
 const CategoryGrid = ({
   title,
   category,
-  profiles
+  profiles,
+  isGuest
 }: {
   title: string;
   category: Category;
   profiles: Profile[];
+  isGuest: boolean;
 }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const filteredProfiles = profiles.filter((p) => p.category === category);
   const Icon = getCategoryIcon(category);
 
   if (filteredProfiles.length === 0) return null;
 
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const { current } = scrollContainerRef;
+      // Scroll by one card width or half container width
+      const scrollAmount = current.offsetWidth / 2 + 16;
+      current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Determine card width class based on guest status (layout width)
+  // Guest = Full Width Container -> 4 cards on Large Screens
+  // User = Sidebar Layout -> 2 cards on Large Screens (because container is smaller)
+  const cardWidthClass = isGuest
+    ? "min-w-full md:min-w-[calc(50%-12px)] lg:min-w-[calc(25%-12px)]"
+    : "min-w-full md:min-w-[calc(50%-12px)]";
+
   return (
-    <div className="mb-12">
+    <div className="mb-10 group/section">
       {/* Section Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-gray-100 rounded-lg border border-gray-200">
-          <Icon className="w-5 h-5 text-gray-700" />
+      <div className="flex items-center justify-between mb-4 px-1">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <Icon className="w-5 h-5 text-[#004fcb]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+              {filteredProfiles.length} expert{filteredProfiles.length !== 1 ? "s" : ""} available
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-600">
-            {filteredProfiles.length} expert{filteredProfiles.length !== 1 ? "s" : ""} available
-          </p>
+
+        {/* Navigation Arrows */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => scroll('left')}
+            className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-[#004fcb] hover:text-[#004fcb] text-gray-500 transition-all shadow-sm"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => scroll('right')}
+            className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-[#004fcb] hover:text-[#004fcb] text-gray-500 transition-all shadow-sm"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Grid Layout - 2 Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Grid Layout - Horizontal Scroll / Carousel */}
+      <div
+        ref={scrollContainerRef}
+        className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide scroll-smooth"
+      >
         {filteredProfiles.map((profile) => (
-          <div key={profile.id} className="h-full">
+          <div
+            key={profile.id}
+            className={`${cardWidthClass} snap-start h-full shrink-0`}
+          >
             <ProfileCard profile={profile} />
           </div>
         ))}
@@ -359,6 +437,9 @@ const calculatePrice = (experience: string, category: string) => {
 
 // Main Component
 export default function CoachSessionCard() {
+  const { user } = useAuth();
+  const isGuest = !user?.id;
+
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -528,21 +609,39 @@ export default function CoachSessionCard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-[1600px] mx-auto px-8 py-6">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Mock Interview Experts</h1>
-            <p className="text-gray-600 mt-2">Book sessions with verified professionals</p>
+      {/* <header className="bg-white border-b border-gray-200">
+        <div className="max-w-[1600px] mx-auto px-8 py-10 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+            Your AI-Powered Placement Partner
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
+            Master interviews with AI-powered mock sessions and real HR practice. Get placed faster at top companies.
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              "AI Feedback",
+              "Real HR Practice",
+              "24/7 Available",
+              "Company-Specific Prep"
+            ].map((feature, idx) => (
+              <div key={idx} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold border border-blue-100">
+                <CheckCircle className="w-3.5 h-3.5" />
+                {feature}
+              </div>
+            ))}
           </div>
         </div>
-      </header>
+      </header> */}
 
       {/* Content */}
-      <main className="max-w-[1600px] mx-auto px-8 py-8">
+      <main className="max-w-[1600px] mx-auto px-1 py-8">
         {loading && (
-          <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-800 border-t-transparent"></div>
-            <p className="text-gray-700 mt-4 font-medium">Loading experts...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Dummy Skeletons for Loading State */}
+            {[1, 2, 3, 4].map(n => (
+              <div key={n}><SkeletonCard /></div>
+            ))}
           </div>
         )}
 
@@ -580,17 +679,16 @@ export default function CoachSessionCard() {
               title={cat.name}
               category={cat.id}
               profiles={allProfiles}
+              isGuest={isGuest}
             />
           ))}
       </main>
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-[1600px] mx-auto px-8 py-6">
-          <div className="text-center text-gray-600 text-sm">
-            <p>© 2024 Mock Interview Platform. All rights reserved.</p>
-            <p className="mt-1">Professional interview preparation with verified experts</p>
-          </div>
+        <div className="max-w-[1600px] mx-auto px-8 py-6 text-center text-gray-600 text-sm">
+          <p>© 2024 Mock Interview Platform. All rights reserved.</p>
+          <p className="mt-1">Professional interview preparation with verified experts</p>
         </div>
       </footer>
 

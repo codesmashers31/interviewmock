@@ -13,30 +13,30 @@ const Hero = () => {
         />
         <div className="absolute inset-0 hero-gradient"></div>
       </div>
-      
+
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
-            Your First Interview 
-            <span className="block text-accent">Shouldn't Be the Real One</span>
+            Your First Interview
+            <span className="block text-[#004fcb]">Shouldn't Be the Real One</span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-12 font-medium leading-relaxed">
             Practice with real HR & IT professionals. Gain confidence. Land your dream job.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Button variant="hero" size="lg" className="text-lg px-8 py-4">
+            <Button size="lg" className="text-lg px-8 py-4 bg-[#004fcb] hover:bg-[#003bb5] text-white shadow-lg shadow-blue-900/20 border-2 border-[#004fcb] hover:border-[#003bb5] transition-all duration-300">
               Book a Mock Interview
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20">
+            <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-white/5 text-white border-2 border-white/20 hover:bg-[#004fcb] hover:border-[#004fcb] hover:text-white backdrop-blur-sm transition-all duration-300">
               Join as HR/Trainer
             </Button>
           </div>
         </div>
       </div>
-      
+
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-primary-foreground/70">
         <div className="animate-bounce">
