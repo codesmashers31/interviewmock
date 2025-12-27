@@ -15,9 +15,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Filter,
-  X,
-  SlidersHorizontal,
   ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -451,12 +448,111 @@ const CATEGORIES: { id: Category; name: string }[] = [
   { id: "AI", name: "AI & ML" }
 ];
 
-const EXPERIENCES = ["Fresher", "1-3 Years", "3-5 Years", "5-10 Years", "10+ Years"];
 const PRICE_RANGES = [
   { label: "Under ₹500", min: 0, max: 500 },
   { label: "₹500 - ₹1000", min: 500, max: 1000 },
   { label: "Above ₹1000", min: 1000, max: 10000 }
 ];
+
+// Horizontal Filter Strip Component
+const FilterScrollStrip = ({
+  items,
+  selectedItem,
+  onSelect,
+  isCategory = false
+}: {
+  items: { id: string; name: string }[];
+  selectedItem: string;
+  onSelect: (id: string) => void;
+  isCategory?: boolean;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [items]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 200;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(checkScroll, 300);
+    }
+  };
+
+  return (
+    <div className="relative flex items-center group/filters w-full max-w-full">
+      {/* Left Gradient & Arrow */}
+      {showLeftArrow && (
+        <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white via-white/80 to-transparent pr-8 pl-0">
+          <button
+            onClick={() => scroll('left')}
+            className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-[#004fcb] shadow-md transition-all hover:scale-110"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Scroll Container */}
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex gap-3 overflow-x-auto scrollbar-hide py-1 px-1 w-full mask-fade-edges scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <button
+          onClick={() => onSelect("All")}
+          className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold border transition-all whitespace-nowrap ${selectedItem === "All" || !selectedItem
+            ? "bg-[#004fcb] border-[#004fcb] text-white shadow-lg shadow-blue-500/20"
+            : "bg-white border-gray-200 text-gray-600 hover:border-[#004fcb] hover:text-[#004fcb]"
+            }`}
+        >
+          All {isCategory ? 'Categories' : ''}
+        </button>
+        {items.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold border transition-all whitespace-nowrap ${selectedItem === item.id
+              ? "bg-[#004fcb] border-[#004fcb] text-white shadow-lg shadow-blue-500/20"
+              : "bg-white border-gray-200 text-gray-600 hover:border-[#004fcb] hover:text-[#004fcb]"
+              }`}
+          >
+            {item.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Right Gradient & Arrow */}
+      {showRightArrow && (
+        <div className="absolute right-0 z-10 flex items-center justify-end h-full bg-gradient-to-l from-white via-white/80 to-transparent pl-8 pr-0">
+          <button
+            onClick={() => scroll('right')}
+            className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-[#004fcb] shadow-md transition-all hover:scale-110"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Main Component
 export default function CoachSessionCard() {
@@ -470,10 +566,8 @@ export default function CoachSessionCard() {
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [selectedExperience, setSelectedExperience] = useState<string>("All");
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("All");
   const [minRating, setMinRating] = useState<number>(0);
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   // Fetch verified experts on mount
   useEffect(() => {
@@ -645,17 +739,7 @@ export default function CoachSessionCard() {
         return false;
       }
 
-      // 3. Experience
-      if (selectedExperience !== "All") {
-        const expStr = profile.experience.toLowerCase();
-        // Simple string matching based on our predefined buckets
-        // This can be improved with parsing years
-        if (selectedExperience === "Fresher" && !expStr.includes("fresher") && !expStr.includes("less than")) return false;
-        // For years, we'd need to parse the number. Let's do a rough check.
-        // If we really need strict filtering, we should standardized 'experience' field to a number.
-        // For now, we will do a basic check if the profile experience string generally matches.
-        // Or better, let's just match on the text if it's consistently formatted.
-      }
+
 
       // 4. Price
       if (selectedPriceRange !== "All") {
@@ -673,79 +757,38 @@ export default function CoachSessionCard() {
 
       return true;
     });
-  }, [allProfiles, searchQuery, selectedCategory, selectedExperience, selectedPriceRange, minRating]);
+  }, [allProfiles, searchQuery, selectedCategory, selectedPriceRange, minRating]);
 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
 
       {/* Search and Filters Section - Sticky */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all duration-300">
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col gap-4">
 
-            {/* Top Row: Search & Toggle Filters (Mobile) */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-2xl">
+            {/* Top Row: Search */}
+            <div className="flex items-center gap-3 w-full">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by name, role, company, or skills..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#004fcb] focus:ring-2 focus:ring-[#004fcb]/10 outline-none transition-all placeholder:text-gray-400 text-sm font-medium"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#004fcb] focus:ring-2 focus:ring-[#004fcb]/10 outline-none transition-all placeholder:text-gray-400 text-sm font-medium"
                 />
               </div>
 
-              <button
-                onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                className={`flex items-center gap-2 px-4 py-3 border rounded-xl font-medium text-sm transition-all hover:bg-gray-50 lg:hidden ${isFilterExpanded ? 'border-[#004fcb] text-[#004fcb] bg-blue-50' : 'border-gray-200 text-gray-700'
-                  }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                Filters
-              </button>
-            </div>
-
-            {/* Filters Row - Responsive */}
-            <div className={`${isFilterExpanded ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row gap-4 items-start lg:items-center`}>
-
-              {/* Category Filter */}
-              <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide mask-fade">
-                <button
-                  onClick={() => setSelectedCategory("All")}
-                  className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === "All" || (!selectedCategory)
-                    ? "bg-[#004fcb] text-white shadow-md shadow-blue-500/20"
-                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                >
-                  All Categories
-                </button>
-                {CATEGORIES.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat.id
-                      ? "bg-[#004fcb] text-white shadow-md shadow-blue-500/20"
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="w-full lg:w-px h-px lg:h-8 bg-gray-200 hidden lg:block"></div>
-
-              {/* Dropdowns Group */}
-              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-
+              {/* Advanced Filters Toggle (Desktop: Dropdowns, Mobile: Maybe modal? For now keeping inline) */}
+              <div className="hidden lg:flex items-center gap-2">
                 {/* Price Filter */}
                 <div className="relative group/dropdown">
                   <select
                     value={selectedPriceRange}
                     onChange={(e) => setSelectedPriceRange(e.target.value)}
-                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-lg text-sm font-medium focus:border-[#004fcb] focus:outline-none cursor-pointer hover:border-gray-300"
+                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium focus:border-[#004fcb] focus:outline-none cursor-pointer hover:border-gray-300"
                   >
                     <option value="All">Any Price</option>
                     {PRICE_RANGES.map(range => (
@@ -760,7 +803,7 @@ export default function CoachSessionCard() {
                   <select
                     value={minRating}
                     onChange={(e) => setMinRating(Number(e.target.value))}
-                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-lg text-sm font-medium focus:border-[#004fcb] focus:outline-none cursor-pointer hover:border-gray-300"
+                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium focus:border-[#004fcb] focus:outline-none cursor-pointer hover:border-gray-300"
                   >
                     <option value="0">Any Rating</option>
                     <option value="4">4.0+ Stars</option>
@@ -769,22 +812,58 @@ export default function CoachSessionCard() {
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-
-                {/* Clear Button */}
-                {(searchQuery || selectedCategory !== "All" || selectedPriceRange !== "All" || minRating > 0) && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedCategory("All");
-                      setSelectedPriceRange("All");
-                      setMinRating(0);
-                    }}
-                    className="text-sm text-red-600 font-medium hover:underline ml-auto lg:ml-2"
-                  >
-                    Reset
-                  </button>
-                )}
               </div>
+            </div>
+
+            {/* Middle Row: Categories Scroll Strip (Always Visible) */}
+            <div className="w-full border-t border-gray-100 pt-3">
+              <FilterScrollStrip
+                items={CATEGORIES}
+                selectedItem={selectedCategory}
+                onSelect={setSelectedCategory}
+                isCategory={true}
+              />
+            </div>
+
+            {/* Mobile Only: Extra Filters (Price/Rating) if needed inline */}
+            <div className="flex lg:hidden gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {/* Price Filter Mobile */}
+              <select
+                value={selectedPriceRange}
+                onChange={(e) => setSelectedPriceRange(e.target.value)}
+                className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded-lg text-xs font-medium focus:border-[#004fcb] outline-none whitespace-nowrap"
+              >
+                <option value="All">Price: Any</option>
+                {PRICE_RANGES.map(range => (
+                  <option key={range.label} value={range.label}>{range.label}</option>
+                ))}
+              </select>
+              {/* Rating Filter Mobile */}
+              <select
+                value={minRating}
+                onChange={(e) => setMinRating(Number(e.target.value))}
+                className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded-lg text-xs font-medium focus:border-[#004fcb] outline-none"
+              >
+                <option value="0">Rating: Any</option>
+                <option value="4">4.0+ Stars</option>
+                <option value="4.5">4.5+ Stars</option>
+                <option value="4.8">4.8+ Stars</option>
+              </select>
+
+              {/* Clear Button */}
+              {(searchQuery || selectedCategory !== "All" || selectedPriceRange !== "All" || minRating > 0) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("All");
+                    setSelectedPriceRange("All");
+                    setMinRating(0);
+                  }}
+                  className="text-xs text-red-600 font-medium whitespace-nowrap px-2"
+                >
+                  Reset
+                </button>
+              )}
             </div>
 
           </div>
