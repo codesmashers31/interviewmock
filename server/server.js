@@ -39,17 +39,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "userid"],
 };
 
-// Debug middleware to log origin
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && !allowedOrigins.includes(origin)) {
-    console.log(`[CORS BLOCKED] Origin: ${origin} not in whitelist.`);
-  } else if (origin) {
-    console.log(`[CORS ALLOWED] Origin: ${origin}`);
-  }
-  next();
-});
-
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(cookieParser());

@@ -5,48 +5,76 @@ export const getSessionsForUser = async (userId, role) => {
     // Strict query based on role
     const query = role === 'expert' ? { expertId: userId } : { candidateId: userId };
 
+    const mongoose = (await import('mongoose')).default;
+    const Expert = (await import('../models/expertModel.js')).default;
+
     // 1. Fetch raw sessions
     const sessions = await Session.find({
         ...query,
-        // Show all relevant statuses so history is visible too
         status: { $in: ['upcoming', 'confirmed', 'live', 'completed', 'cancelled'] }
     }).sort({ startTime: -1 }).lean();
 
-    // 2. Enrich with Candidate Details (for Experts) or Expert Details (for Candidates)
+    // 2. Enrich
     const enrichedSessions = await Promise.all(sessions.map(async (session) => {
         try {
-            // IF viewer is expert, get Candidate info
-            if (role === 'expert' && session.candidateId) {
-                // Try to find user by ID (assuming candidateId is a User _id)
-                // If standard UUIDs are used for test sessions, this might fail gracefully
-                let candidate = null;
-                try {
-                    candidate = await User.findById(session.candidateId).select('name email personalInfo education experience skills profileImage');
-                } catch (e) {
-                    // If candidateId is not a valid ObjectId, try email lookup if it looks like email
-                    if (session.candidateId.includes('@')) {
-                        candidate = await User.findOne({ email: session.candidateId }).select('name email personalInfo education experience skills profileImage');
-                    }
-                }
+            let expert = null;
+            let candidate = null;
+            const lookupId = session.expertId;
 
-                if (candidate) {
-                    return {
-                        ...session,
-                        candidateName: candidate.name,
-                        candidateDetails: {
-                            email: candidate.email,
-                            phone: candidate.personalInfo?.phone,
-                            location: `${candidate.personalInfo?.city || ''}, ${candidate.personalInfo?.country || ''}`,
-                            education: candidate.education || [],
-                            experience: candidate.experience || [],
-                            skills: [...(candidate.skills?.technical || []), ...(candidate.skills?.soft || [])],
-                            profileImage: candidate.profileImage
-                        }
-                    };
+            // Fetch Expert Info
+            if (mongoose.Types.ObjectId.isValid(lookupId)) {
+                const oid = new mongoose.Types.ObjectId(lookupId);
+                expert = await Expert.findOne({ userId: oid }).populate('userId');
+                if (!expert) expert = await Expert.findById(oid).populate('userId');
+                if (!expert) expert = await Expert.findOne({ userId: lookupId.toString() }).populate('userId');
+            } else if (typeof lookupId === 'string' && lookupId.includes('@')) {
+                const userByEmail = await User.findOne({ email: lookupId.toLowerCase() });
+                if (userByEmail) {
+                    expert = await Expert.findOne({ userId: userByEmail._id }).populate('userId');
                 }
             }
-            // Add other enrichments if needed
-            return session;
+
+            // Fetch Candidate Info
+            if (mongoose.Types.ObjectId.isValid(session.candidateId)) {
+                candidate = await User.findById(session.candidateId);
+            } else if (typeof session.candidateId === 'string' && session.candidateId.includes('@')) {
+                candidate = await User.findOne({ email: session.candidateId.toLowerCase() });
+            }
+
+            // Resilient Names
+            let expertName = 'Unknown Expert';
+            if (expert) {
+                expertName = expert.personalInformation?.userName || expert.userId?.name || 'Expert';
+            } else {
+                // User fallback
+                const u = await User.findById(lookupId).catch(() => null);
+                if (u) {
+                    expertName = u.name;
+                } else if (typeof lookupId === 'string' && !mongoose.Types.ObjectId.isValid(lookupId)) {
+                    expertName = lookupId;
+                } else {
+                    expertName = lookupId || 'Unknown Expert'; // Fallback to ID
+                }
+            }
+
+            const candidateName = candidate?.name || (typeof session.candidateId === 'string' ? session.candidateId : 'Candidate');
+
+            return {
+                ...session,
+                expertName,
+                candidateName,
+                expertDetails: {
+                    name: expertName,
+                    role: expert?.professionalDetails?.title || 'Expert',
+                    company: expert?.professionalDetails?.company || 'N/A',
+                    profileImage: expert?.profileImage || expert?.userId?.profileImage || null
+                },
+                candidateDetails: candidate ? {
+                    name: candidateName,
+                    email: candidate.email,
+                    profileImage: candidate.profileImage
+                } : null
+            };
         } catch (err) {
             console.error(`Error enriching session ${session.sessionId}:`, err);
             return session;
@@ -57,50 +85,42 @@ export const getSessionsForUser = async (userId, role) => {
 };
 
 export const createRestrictedTestSession = async (expertEmail, candidateEmail, customStartTime, customEndTime) => {
-    // 1. Find Users
     const expert = await User.findOne({ email: expertEmail });
     if (!expert) throw new Error(`Expert not found: ${expertEmail}`);
 
     const candidate = await User.findOne({ email: candidateEmail });
     if (!candidate) throw new Error(`Candidate not found: ${candidateEmail}`);
 
-    // 2. Determine Start Time
     let nextStart;
     const now = new Date();
 
     if (customStartTime) {
-        // Manual Override
         if (customStartTime === 'NOW') {
-            nextStart = new Date(now.getTime() + 2 * 60 * 1000); // Starts in 2 mins
+            nextStart = new Date(now.getTime() + 2 * 60 * 1000); // 2 mins
         } else {
             nextStart = new Date(customStartTime);
         }
     } else {
-        // Default: Next 10:00 UTC
         nextStart = new Date(now);
         nextStart.setUTCHours(10, 0, 0, 0);
-        if (nextStart <= now) {
-            nextStart.setDate(nextStart.getDate() + 1);
-        }
+        if (nextStart <= now) nextStart.setDate(nextStart.getDate() + 1);
     }
 
-    // 3. Create Session
     let endTime;
     if (customEndTime) {
         endTime = new Date(customEndTime);
     } else {
-        endTime = new Date(nextStart.getTime() + 60 * 60 * 1000); // 1 hour duration
+        endTime = new Date(nextStart.getTime() + 60 * 60 * 1000);
     }
 
-    // Check if exists to avoid duplicates
     const sessionId = `test-restricted-${expert._id}-${candidate._id}`;
     let session = await Session.findOne({ sessionId });
 
     if (!session) {
         session = new Session({
             sessionId,
-            expertId: expert._id.toString(), // Strict DB ID
-            candidateId: candidate._id.toString(), // Strict DB ID
+            expertId: expert._id.toString(),
+            candidateId: candidate._id.toString(),
             startTime: nextStart,
             endTime: endTime,
             topics: ["Restricted Test", "Strict Auth"],
@@ -108,7 +128,6 @@ export const createRestrictedTestSession = async (expertEmail, candidateEmail, c
         });
         await session.save();
     } else {
-        // Update time
         session.startTime = nextStart;
         session.endTime = endTime;
         session.status = "confirmed";
@@ -140,12 +159,9 @@ export const getSessionsByCandidateId = async (candidateId) => {
 };
 
 export const seedTestSession = async () => {
-    // 1. Shared Test Session (The "9 to 10" Session)
-    // accessible by Candidate (hardcoded fetch) and Expert (via email query)
     const testSessionId = "test-session-001";
     const sharedExpertId = "kohsanar20@gmail.com";
 
-    // Calculate Today 9:00 AM - 10:00 AM
     const now = new Date();
     const start9am = new Date(now);
     start9am.setHours(9, 0, 0, 0);
@@ -155,19 +171,17 @@ export const seedTestSession = async () => {
     let session = await Session.findOne({ sessionId: testSessionId });
 
     if (!session) {
-
         session = new Session({
             sessionId: testSessionId,
-            expertId: sharedExpertId, // Unified Expert
+            expertId: sharedExpertId,
             candidateId: "candidate-456",
             startTime: start9am,
             endTime: end10am,
             topics: ["React", "System Design", "Unified Testing"],
-            status: "confirmed" // Active/Confirmed
+            status: "confirmed"
         });
         await session.save();
     } else {
-        // Update existing to match current request
         session.expertId = sharedExpertId;
         session.startTime = start9am;
         session.endTime = end10am;
@@ -175,8 +189,6 @@ export const seedTestSession = async () => {
         await session.save();
     }
 
-    // 2. Extra Session (Optional/Previous request persistence)
-    // Keeping this but ensuring it doesn't conflict
     const userSessionId = "test-session-kohsanar-extra";
     let userSession = await Session.findOne({ sessionId: userSessionId });
 
@@ -185,10 +197,10 @@ export const seedTestSession = async () => {
             sessionId: userSessionId,
             expertId: sharedExpertId,
             candidateId: "candidate-789",
-            startTime: new Date(Date.now() + 1000 * 60 * 60 * 24), // Tomorrow
+            startTime: new Date(Date.now() + 1000 * 60 * 60 * 24),
             endTime: new Date(Date.now() + 1000 * 60 * 60 * 25),
             topics: ["Future Session"],
-            status: "Upcoming"
+            status: "confirmed"
         });
         await userSession.save();
     }
@@ -197,7 +209,6 @@ export const seedTestSession = async () => {
 };
 
 export const getAllSessions = async () => {
-    // Import Expert and User models dynamically to avoid circular deps if any
     const Expert = (await import('../models/expertModel.js')).default;
     const User = (await import('../models/User.js')).default;
     const mongoose = (await import('mongoose')).default;
@@ -208,36 +219,46 @@ export const getAllSessions = async () => {
         sessions.map(async (session) => {
             let expert = null;
             let candidate = null;
+            const lookupId = session.expertId;
 
-            // 1. Fetch Expert (try userId matching first)
-            if (mongoose.Types.ObjectId.isValid(session.expertId)) {
-                expert = await Expert.findOne({ userId: session.expertId }).populate('userId');
-                // Fallback: maybe expertId IS the expert document ID?
-                if (!expert) {
-                    expert = await Expert.findById(session.expertId).populate('userId');
-                }
-            } else {
-                // expertId is email or other string
-                // Strategy for seeded data: expertId might be email
-                const userByEmail = await User.findOne({ email: session.expertId });
+            if (mongoose.Types.ObjectId.isValid(lookupId)) {
+                const oid = new mongoose.Types.ObjectId(lookupId);
+                expert = await Expert.findOne({ userId: oid }).populate('userId');
+                if (!expert) expert = await Expert.findById(oid).populate('userId');
+                if (!expert) expert = await Expert.findOne({ userId: lookupId.toString() }).populate('userId');
+            } else if (typeof lookupId === 'string' && lookupId.includes('@')) {
+                const userByEmail = await User.findOne({ email: lookupId.toLowerCase() });
                 if (userByEmail) {
                     expert = await Expert.findOne({ userId: userByEmail._id }).populate('userId');
                 }
             }
 
-            // 2. Fetch Candidate (User)
             if (mongoose.Types.ObjectId.isValid(session.candidateId)) {
                 candidate = await User.findById(session.candidateId);
-            } else {
-                // Strategy for seeded data: candidateId might be string alias or email?
-                // Let's assume for now if not ObjectId it might be a user email if strict match
-                candidate = await User.findOne({ email: session.candidateId });
+            } else if (typeof session.candidateId === 'string' && session.candidateId.includes('@')) {
+                candidate = await User.findOne({ email: session.candidateId.toLowerCase() });
             }
+
+            let expertName = 'Unknown Expert';
+            if (expert) {
+                expertName = expert.personalInformation?.userName || expert.userId?.name || 'Expert';
+            } else {
+                const u = await User.findById(lookupId).catch(() => null);
+                if (u) {
+                    expertName = u.name;
+                } else if (typeof lookupId === 'string' && !mongoose.Types.ObjectId.isValid(lookupId)) {
+                    expertName = lookupId;
+                } else {
+                    expertName = lookupId || 'Unknown Expert';
+                }
+            }
+
+            const candidateName = candidate?.name || (typeof session.candidateId === 'string' ? session.candidateId : 'Candidate');
 
             return {
                 ...session,
-                expertName: expert?.personalInformation?.userName || expert?.userId?.name || session.expertId,
-                candidateName: candidate?.name || session.candidateId,
+                expertName,
+                candidateName,
                 topic: session.topics?.[0] || "General Consultation",
                 status: session.status,
                 amount: session.price,

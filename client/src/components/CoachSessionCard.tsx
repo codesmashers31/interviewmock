@@ -14,13 +14,13 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Search,
-  ChevronDown
+  Search
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
 import { getProfileImageUrl } from "../lib/imageUtils";
 import { useAuth } from "../context/AuthContext";
+import FilterScrollStrip from "./FilterScrollStrip";
 
 // Types
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
@@ -243,16 +243,16 @@ const CategoryGrid = ({
     : "min-w-full md:min-w-[calc(50%-12px)]";
 
   return (
-    <div className="mb-10 group/section">
+    <div className="mb-8 group/section">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-white rounded-lg border border-gray-200 shadow-sm">
-            <Icon className="w-5 h-5 text-[#004fcb]" />
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <Icon className="w-4 h-4 text-[#004fcb]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-gray-900 leading-tight">{title}</h2>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
               {filteredProfiles.length} expert{filteredProfiles.length !== 1 ? "s" : ""} available
             </p>
           </div>
@@ -448,111 +448,9 @@ const CATEGORIES: { id: Category; name: string }[] = [
   { id: "AI", name: "AI & ML" }
 ];
 
-const PRICE_RANGES = [
-  { label: "Under ₹500", min: 0, max: 500 },
-  { label: "₹500 - ₹1000", min: 500, max: 1000 },
-  { label: "Above ₹1000", min: 1000, max: 10000 }
-];
 
-// Horizontal Filter Strip Component
-const FilterScrollStrip = ({
-  items,
-  selectedItem,
-  onSelect,
-  isCategory = false
-}: {
-  items: { id: string; name: string }[];
-  selectedItem: string;
-  onSelect: (id: string) => void;
-  isCategory?: boolean;
-}) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
 
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setShowLeftArrow(scrollLeft > 0);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
 
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, [items]);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = 200;
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-      setTimeout(checkScroll, 300);
-    }
-  };
-
-  return (
-    <div className="relative flex items-center group/filters w-full max-w-full">
-      {/* Left Gradient & Arrow */}
-      {showLeftArrow && (
-        <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white via-white/80 to-transparent pr-8 pl-0">
-          <button
-            onClick={() => scroll('left')}
-            className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-[#004fcb] shadow-md transition-all hover:scale-110"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-
-      {/* Scroll Container */}
-      <div
-        ref={scrollRef}
-        onScroll={checkScroll}
-        className="flex gap-3 overflow-x-auto scrollbar-hide py-1 px-1 w-full mask-fade-edges scroll-smooth"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        <button
-          onClick={() => onSelect("All")}
-          className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold border transition-all whitespace-nowrap ${selectedItem === "All" || !selectedItem
-            ? "bg-[#004fcb] border-[#004fcb] text-white shadow-lg shadow-blue-500/20"
-            : "bg-white border-gray-200 text-gray-600 hover:border-[#004fcb] hover:text-[#004fcb]"
-            }`}
-        >
-          All {isCategory ? 'Categories' : ''}
-        </button>
-        {items.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSelect(item.id)}
-            className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold border transition-all whitespace-nowrap ${selectedItem === item.id
-              ? "bg-[#004fcb] border-[#004fcb] text-white shadow-lg shadow-blue-500/20"
-              : "bg-white border-gray-200 text-gray-600 hover:border-[#004fcb] hover:text-[#004fcb]"
-              }`}
-          >
-            {item.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Right Gradient & Arrow */}
-      {showRightArrow && (
-        <div className="absolute right-0 z-10 flex items-center justify-end h-full bg-gradient-to-l from-white via-white/80 to-transparent pl-8 pr-0">
-          <button
-            onClick={() => scroll('right')}
-            className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-[#004fcb] shadow-md transition-all hover:scale-110"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // Main Component
 export default function CoachSessionCard() {
@@ -566,8 +464,6 @@ export default function CoachSessionCard() {
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string>("All");
-  const [minRating, setMinRating] = useState<number>(0);
 
   // Fetch verified experts on mount
   useEffect(() => {
@@ -723,14 +619,14 @@ export default function CoachSessionCard() {
 
   // --- Filtering Logic ---
   const validProfiles = useMemo(() => {
-    return allProfiles.filter(profile => {
+    return allProfiles.filter((profile) => {
       // 1. Search Query
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchesName = profile.name.toLowerCase().includes(q);
         const matchesRole = profile.role.toLowerCase().includes(q);
         const matchesCompany = profile.company?.toLowerCase().includes(q);
-        const matchesSkill = profile.skills.some(s => s.toLowerCase().includes(q));
+        const matchesSkill = profile.skills.some((s) => s.toLowerCase().includes(q));
         if (!matchesName && !matchesRole && !matchesCompany && !matchesSkill) return false;
       }
 
@@ -739,84 +635,36 @@ export default function CoachSessionCard() {
         return false;
       }
 
-
-
-      // 4. Price
-      if (selectedPriceRange !== "All") {
-        const priceVal = parseInt(profile.price.replace(/[^\d]/g, ""));
-        const range = PRICE_RANGES.find(r => r.label === selectedPriceRange);
-        if (range) {
-          if (priceVal < range.min || priceVal > range.max) return false;
-        }
-      }
-
-      // 5. Rating
-      if (minRating > 0) {
-        if (profile.rating < minRating) return false;
-      }
-
       return true;
     });
-  }, [allProfiles, searchQuery, selectedCategory, selectedPriceRange, minRating]);
+  }, [allProfiles, searchQuery, selectedCategory]);
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-8 pt-0">
+      {/* Search and Filters Section - Stacked Layout */}
+      <div className="bg-white border-b border-gray-200 shadow-sm rounded-lg overflow-hidden mb-4 sticky top-14 z-30">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="flex flex-col">
 
-      {/* Search and Filters Section - Sticky */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col gap-4">
-
-            {/* Top Row: Search */}
-            <div className="flex items-center gap-3 w-full">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            {/* Row 1: Search Bar - Always Visible */}
+            <div className="px-4 sm:px-8 py-2">
+              <div className="relative group w-full max-w-3xl mx-auto">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-colors duration-300" />
                 <input
                   type="text"
-                  placeholder="Search by name, role, company, or skills..."
+                  placeholder="Search by name, role, company, or expertise..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#004fcb] focus:ring-2 focus:ring-[#004fcb]/10 outline-none transition-all placeholder:text-gray-400 text-sm font-medium"
+                  className="w-full h-12 pl-12 pr-6 py-1.5 bg-gray-50 border-2 border-transparent rounded-xl focus:border-[#004fcb]/10 focus:bg-white focus:ring-4 focus:ring-[#004fcb]/5 outline-none transition-all placeholder:text-gray-400 text-xs font-medium shadow-inner"
                 />
-              </div>
-
-              {/* Advanced Filters Toggle (Desktop: Dropdowns, Mobile: Maybe modal? For now keeping inline) */}
-              <div className="hidden lg:flex items-center gap-2">
-                {/* Price Filter */}
-                <div className="relative group/dropdown">
-                  <select
-                    value={selectedPriceRange}
-                    onChange={(e) => setSelectedPriceRange(e.target.value)}
-                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium focus:border-[#004fcb] focus:outline-none cursor-pointer hover:border-gray-300"
-                  >
-                    <option value="All">Any Price</option>
-                    {PRICE_RANGES.map(range => (
-                      <option key={range.label} value={range.label}>{range.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Rating Filter */}
-                <div className="relative group/dropdown">
-                  <select
-                    value={minRating}
-                    onChange={(e) => setMinRating(Number(e.target.value))}
-                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 pl-4 pr-10 rounded-xl text-sm font-medium focus:border-[#004fcb] focus:outline-none cursor-pointer hover:border-gray-300"
-                  >
-                    <option value="0">Any Rating</option>
-                    <option value="4">4.0+ Stars</option>
-                    <option value="4.5">4.5+ Stars</option>
-                    <option value="4.8">4.8+ Stars</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
               </div>
             </div>
 
-            {/* Middle Row: Categories Scroll Strip (Always Visible) */}
-            <div className="w-full border-t border-gray-100 pt-3">
+
+
+            {/* Desktop Only: Categories Row */}
+            <div className="hidden lg:block px-8 py-1.5 bg-white border-t border-gray-100">
               <FilterScrollStrip
                 items={CATEGORIES}
                 selectedItem={selectedCategory}
@@ -824,54 +672,11 @@ export default function CoachSessionCard() {
                 isCategory={true}
               />
             </div>
-
-            {/* Mobile Only: Extra Filters (Price/Rating) if needed inline */}
-            <div className="flex lg:hidden gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {/* Price Filter Mobile */}
-              <select
-                value={selectedPriceRange}
-                onChange={(e) => setSelectedPriceRange(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded-lg text-xs font-medium focus:border-[#004fcb] outline-none whitespace-nowrap"
-              >
-                <option value="All">Price: Any</option>
-                {PRICE_RANGES.map(range => (
-                  <option key={range.label} value={range.label}>{range.label}</option>
-                ))}
-              </select>
-              {/* Rating Filter Mobile */}
-              <select
-                value={minRating}
-                onChange={(e) => setMinRating(Number(e.target.value))}
-                className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded-lg text-xs font-medium focus:border-[#004fcb] outline-none"
-              >
-                <option value="0">Rating: Any</option>
-                <option value="4">4.0+ Stars</option>
-                <option value="4.5">4.5+ Stars</option>
-                <option value="4.8">4.8+ Stars</option>
-              </select>
-
-              {/* Clear Button */}
-              {(searchQuery || selectedCategory !== "All" || selectedPriceRange !== "All" || minRating > 0) && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("All");
-                    setSelectedPriceRange("All");
-                    setMinRating(0);
-                  }}
-                  className="text-xs text-red-600 font-medium whitespace-nowrap px-2"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-
           </div>
         </div>
       </div>
-
       {/* Content */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 pt-2 pb-8">
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Dummy Skeletons for Loading State */}
@@ -879,79 +684,78 @@ export default function CoachSessionCard() {
               <div key={n}><SkeletonCard /></div>
             ))}
           </div>
-        )}
+        )
+        }
 
-        {error && (
-          <div className="text-center py-20">
-            <div className="inline-block p-4 bg-red-50 rounded-full mb-4">
-              <CheckCircle className="w-12 h-12 text-red-600" />
+        {
+          error && (
+            <div className="text-center py-20">
+              <div className="inline-block p-4 bg-red-50 rounded-full mb-4">
+                <CheckCircle className="w-12 h-12 text-red-600" />
+              </div>
+              <p className="text-red-600 text-lg font-semibold">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
-            <p className="text-red-600 text-lg font-semibold">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
+          )
+        }
 
-        {!loading && !error && validProfiles.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-            <div className="inline-block p-4 bg-gray-50 rounded-full mb-4">
-              <Search className="w-12 h-12 text-gray-300" />
+        {
+          !loading && !error && validProfiles.length === 0 && (
+            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+              <div className="inline-block p-4 bg-gray-50 rounded-full mb-4">
+                <Search className="w-12 h-12 text-gray-300" />
+              </div>
+              <p className="text-gray-900 text-lg font-bold">No experts found</p>
+              <p className="text-gray-500 mt-2 max-w-md mx-auto">
+                We couldn't find any experts matching your current filters. Try adjusting your search or clearing some filters.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("All");
+                }}
+                className="mt-6 px-6 py-2.5 bg-[#004fcb] text-white rounded-full font-bold text-sm shadow-lg shadow-blue-600/20 hover:shadow-xl hover:scale-105 transition-all"
+              >
+                Clear All Filters
+              </button>
             </div>
-            <p className="text-gray-900 text-lg font-bold">No experts found</p>
-            <p className="text-gray-500 mt-2 max-w-md mx-auto">
-              We couldn't find any experts matching your current filters. Try adjusting your search or clearing some filters.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("All");
-                setSelectedPriceRange("All");
-                setMinRating(0);
-              }}
-              className="mt-6 px-6 py-2.5 bg-[#004fcb] text-white rounded-full font-bold text-sm shadow-lg shadow-blue-600/20 hover:shadow-xl hover:scale-105 transition-all"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        )}
+          )
+        }
 
         {/* Show Grids - If searching or filtering heavily, maybe show a single grid? 
             For now, sticking to the Category Sections layout as it's nice, but filtering the data passed to them. 
         */}
-        {!loading && !error && validProfiles.length > 0 && (
-          <div className="space-y-4">
-            {/* If specific category selected, just show that one. Else show all valid categories */}
-            {CATEGORIES
-              .filter(cat =>
-                // If "All" selected, show all categories that have matching profiles
-                // If specific category selected, only show that category
-                (selectedCategory === "All" || selectedCategory === cat.id) &&
-                validProfiles.some(p => p.category === cat.id)
-              )
-              .map(cat => (
-                <CategoryGrid
-                  key={cat.id}
-                  title={cat.name}
-                  category={cat.id}
-                  profiles={validProfiles} // Pass filtered profiles
-                  isGuest={isGuest}
-                />
-              ))}
-          </div>
-        )}
+        {
+          !loading && !error && validProfiles.length > 0 && (
+            <div className="space-y-4">
+              {/* If specific category selected, just show that one. Else show all valid categories */}
+              {CATEGORIES
+                .filter(cat =>
+                  // If "All" selected, show all categories that have matching profiles
+                  // If specific category selected, only show that category
+                  (selectedCategory === "All" || selectedCategory === cat.id) &&
+                  validProfiles.some(p => p.category === cat.id)
+                )
+                .map(cat => (
+                  <CategoryGrid
+                    key={cat.id}
+                    title={cat.name}
+                    category={cat.id}
+                    profiles={validProfiles} // Pass filtered profiles
+                    isGuest={isGuest}
+                  />
+                ))}
+            </div>
+          )
+        }
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-[1600px] mx-auto px-8 py-6 text-center text-gray-600 text-sm">
-          <p>© 2024 Mock Interview Platform. All rights reserved.</p>
-          <p className="mt-1">Professional interview preparation with verified experts</p>
-        </div>
-      </footer>
+
 
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {

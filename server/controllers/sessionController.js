@@ -61,42 +61,85 @@ export const getSessionsByCandidate = async (req, res) => {
         const User = (await import('../models/User.js')).default;
         const mongoose = (await import('mongoose')).default;
 
-        // Enrich sessions with expert details
+        // Enrichment
         const enrichedSessions = await Promise.all(
             sessions.map(async (session) => {
                 let expert = null;
+                const lookupId = session.expertId;
 
                 try {
-                    // Strategy 1: If expertId is a valid ObjectId, try finding by userId or _id
-                    if (mongoose.Types.ObjectId.isValid(session.expertId)) {
-                        // A. Try finding by userId (Ref to User)
-                        expert = await Expert.findOne({ userId: session.expertId }).populate('userId');
+                    // Logic: expertId could be a User ObjectId, an ExpertDetails ObjectId, or an Email
+                    if (mongoose.Types.ObjectId.isValid(lookupId)) {
+                        const oid = new mongoose.Types.ObjectId(lookupId);
 
-                        // B. Try finding by _id (The Expert Document ID)
+                        // 1. Try finding ExpertDetails by userId
+                        expert = await Expert.findOne({ userId: oid }).populate('userId');
+
+                        // 2. Try finding ExpertDetails by its own _id
                         if (!expert) {
-                            expert = await Expert.findById(session.expertId).populate('userId');
+                            expert = await Expert.findById(oid).populate('userId');
                         }
                     }
 
-                    // Strategy 2: If expertId looks like an email (Legacy / Seed Data)
-                    if (!expert && typeof session.expertId === 'string' && session.expertId.includes('@')) {
-                        const user = await User.findOne({ email: session.expertId });
-                        if (user) {
-                            expert = await Expert.findOne({ userId: user._id }).populate('userId');
+                    // 3. Email fallback
+                    if (!expert && typeof lookupId === 'string' && lookupId.includes('@')) {
+                        const userByEmail = await User.findOne({ email: lookupId.toLowerCase() });
+                        if (userByEmail) {
+                            expert = await Expert.findOne({ userId: userByEmail._id }).populate('userId');
                         }
                     }
                 } catch (lookupErr) {
-                    console.error(`Expert lookup failed for session ${session.sessionId || 'unknown'}:`, lookupErr);
+                    console.error(`[SessionController] Expert lookup error for ${lookupId}:`, lookupErr);
                 }
 
+                // --- NAME RESOLUTION ---
+                let expertName = 'Unknown Expert';
+                let expertRole = 'Expert';
+                let expertCompany = 'N/A';
+                let expertImage = null;
+
+                if (expert) {
+                    expertName = expert.personalInformation?.userName || expert.userId?.name || 'Expert';
+                    expertRole = expert.professionalDetails?.title || 'Expert';
+                    expertCompany = expert.professionalDetails?.company || 'N/A';
+                    expertImage = expert.profileImage || expert.userId?.profileImage || null;
+                } else {
+                    // Failover: Try to find the USER directly if Expert doc is missing
+                    try {
+                        let userFallback = null;
+                        if (mongoose.Types.ObjectId.isValid(lookupId)) {
+                            userFallback = await User.findById(lookupId);
+                            if (!userFallback) {
+                                // One last aggressive try: check if it's stored as string _id
+                                userFallback = await User.findOne({ _id: lookupId.toString() });
+                            }
+                        } else if (typeof lookupId === 'string' && lookupId.includes('@')) {
+                            userFallback = await User.findOne({ email: lookupId.toLowerCase() });
+                        }
+
+                        if (userFallback) {
+                            expertName = userFallback.name || expertName;
+                            expertImage = userFallback.profileImage || null;
+                        } else {
+                            // If it's a non-ID string (email/name), use it. 
+                            // If it's an ID we can't find, it'll still be "Unknown Expert" -> we will fix that below.
+                            if (lookupId && !mongoose.Types.ObjectId.isValid(lookupId)) {
+                                expertName = lookupId;
+                            }
+                        }
+                    } catch (e) { }
+                }
+
+                // ULTIMATE FALLBACK: If we still have "Unknown Expert" but a valid ID string, 
+                // it means we have a session linked to a missing or hidden user. 
+                // We show the ID so the user knows WHO it is (or at least it's not generic).
+                if (expertName === 'Unknown Expert' && lookupId) {
+                    expertName = lookupId;
+                }
 
                 // Match Review - Expert's review for this session
                 const Review = (await import('../models/reviewModel.js')).default;
                 const expertReview = await Review.findOne({ sessionId: session.sessionId, reviewerRole: 'expert' });
-
-                const expertName = expert?.personalInformation?.userName || expert?.userId?.name || 'Unknown Expert';
-                const expertRole = expert?.professionalDetails?.title || 'Expert';
-                const expertCompany = expert?.professionalDetails?.company || 'N/A';
 
                 return {
                     ...session.toObject(),
@@ -108,22 +151,15 @@ export const getSessionsByCandidate = async (req, res) => {
                         weaknesses: expertReview.weaknesses,
                         feedback: expertReview.feedback
                     } : null,
-                    expertDetails: expert ? {
+                    expertDetails: {
                         name: expertName,
                         role: expertRole,
                         company: expertCompany,
-                        category: expert.personalInformation?.category || 'General',
-                        profileImage: expert.profileImage || null,
-                        rating: expert.metrics?.avgRating || 4.8,
-                        reviews: expert.metrics?.totalReviews || 0
-                    } : {
-                        name: 'Unknown Expert', // If we really can't find the expert doc, but maybe we can find the User?
-                        role: 'Expert',
-                        company: 'N/A',
-                        category: 'General',
-                        profileImage: null,
-                        rating: 0,
-                        reviews: 0
+                        category: expert?.personalInformation?.category || 'General',
+                        profileImage: expertImage,
+                        rating: expert?.metrics?.avgRating || 4.8,
+                        reviews: expert?.metrics?.totalReviews || 0,
+                        expertise: expert?.skillsAndExpertise?.domains || []
                     }
                 };
             })
@@ -160,10 +196,6 @@ export const devSeedSession = async (req, res) => {
 export const getUserSessions = async (req, res) => {
     try {
         const { userId, role } = req.params;
-        // Verify that the requesting user matches the param ID (Security check)
-        // In a real app, req.user.id from auth middleware should match userId
-        // For this mock, we trust the caller BUT we strictly query by this ID.
-
         const sessions = await sessionService.getSessionsForUser(userId, role);
         res.json(sessions);
     } catch (error) {
@@ -181,8 +213,31 @@ export const joinSession = async (req, res) => {
         const session = await sessionService.getSessionById(sessionId);
         if (!session) return res.status(404).json({ message: "Session not found" });
 
-        // 1. Validate Identity
-        if (session.expertId !== userId && session.candidateId !== userId) {
+        // 1. Validate Identity (Resilient check for ID or Email)
+        const mongoose = (await import('mongoose')).default;
+        const User = (await import('../models/User.js')).default;
+
+        let isParticipant = false;
+
+        // Convert to strings for comparison
+        const sExpert = session.expertId?.toString() || "";
+        const sCandidate = session.candidateId?.toString() || "";
+        const uId = userId.toString();
+
+        if (sExpert === uId || sCandidate === uId) {
+            isParticipant = true;
+        } else {
+            // Check by email fallback
+            const user = await User.findById(userId);
+            if (user && user.email) {
+                const uEmail = user.email.toLowerCase();
+                if (sExpert.toLowerCase() === uEmail || sCandidate.toLowerCase() === uEmail) {
+                    isParticipant = true;
+                }
+            }
+        }
+
+        if (!isParticipant) {
             return res.status(403).json({ message: "Access Denied: You are not a participant of this session." });
         }
 
@@ -202,21 +257,20 @@ export const joinSession = async (req, res) => {
         }
 
         if (now > end) {
-            return res.status(400).json({
-                message: "Session has ended.",
-                endTime: end
-            });
+            // Buffer: Allow joining for up to 30 mins after end time just in case
+            const bufferEnd = new Date(end.getTime() + 30 * 60 * 1000);
+            if (now > bufferEnd) {
+                return res.status(400).json({ message: "Session has ended.", endTime: end });
+            }
         }
 
         // 3. Success -> Return Meeting Data
-        // Ideally we create/fetch the Meeting record here
         await meetingService.getOrCreateMeeting(session.sessionId); // Ensure Meeting doc exists
 
-        // For now, we return valid signal to proceed
         res.json({
             permitted: true,
             meetingId: session.sessionId, // Using sessionId as meetingId
-            role: session.expertId === userId ? 'expert' : 'candidate'
+            role: (sExpert === uId || (isParticipant && sExpert.includes('@'))) ? 'expert' : 'candidate'
         });
 
     } catch (error) {
@@ -244,7 +298,6 @@ export const getAllSessions = async (req, res) => {
     }
 };
 
-/* -------------------- Submit Review -------------------- */
 /* -------------------- Submit Review -------------------- */
 export const submitReview = async (req, res) => {
     try {
@@ -292,16 +345,13 @@ export const submitReview = async (req, res) => {
             }
 
             // --- SEND EMAIL NOTIFICATION ---
-            // Only send notification to candidate if expert reviewed
             if (reviewerRole === 'expert') {
                 try {
-                    // Fetch Candidate Email
                     let candidateEmail = null;
-                    let candidateUserId = null; // We need this for notification
+                    let candidateUserId = null;
 
                     if (candidateId.includes('@')) {
                         candidateEmail = candidateId;
-                        // If candidateId is email, we can't create in-app notification reliably unless we find User
                         const user = await User.findOne({ email: candidateId });
                         if (user) candidateUserId = user._id;
                     } else {
@@ -313,21 +363,15 @@ export const submitReview = async (req, res) => {
                     }
 
                     if (candidateEmail) {
-                        // Expert name
                         let expertName = "An Expert";
-                        // attempt to find expert name if possible or leave generic
-
                         await emailService.notifyReviewReceived(
                             expertName,
                             candidateEmail,
                             session.topics?.[0] || "Mock Interview",
                             { overallRating, technicalRating, communicationRating, feedback }
                         );
-                    } else {
-                        console.warn(`Candidate email not found for ID: ${candidateId}. Review email notification skipped.`);
                     }
 
-                    // --- CREATE IN-APP NOTIFICATION ---
                     if (candidateUserId) {
                         const { createNotification } = await import('../controllers/notificationController.js');
                         await createNotification({
@@ -337,11 +381,10 @@ export const submitReview = async (req, res) => {
                             message: `Your expert has submitted feedback for the session on ${session.topics?.[0] || 'Mock Interview'}. Rating: ${overallRating}/5.`,
                             metadata: {
                                 sessionId: sessionId,
-                                link: `/my-sessions` // Simplify link for now
+                                link: `/my-sessions`
                             }
                         });
                     }
-
                 } catch (emailErr) {
                     console.error("Failed to send review email/notification:", emailErr);
                 }
@@ -359,9 +402,7 @@ export const submitReview = async (req, res) => {
 export const getSessionReviews = async (req, res) => {
     try {
         const { sessionId } = req.params;
-
         const Review = (await import('../models/reviewModel.js')).default;
-
         const reviews = await Review.find({ sessionId });
 
         const expertReview = reviews.find(r => r.reviewerRole === 'expert') || null;

@@ -3,15 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   Video,
-  User,
   Clock,
-  MapPin,
   CheckCircle,
   Search,
   ChevronLeft,
   ChevronRight,
   Star,
-  Filter,
   X,
   MoreVertical,
   Loader2,
@@ -24,6 +21,13 @@ import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import axios from '../lib/axios';
 import { getProfileImageUrl } from "../lib/imageUtils";
+import FilterScrollStrip from "./FilterScrollStrip";
+
+const STATUSES = [
+  { id: "Upcoming", name: "Upcoming" },
+  { id: "Confirmed", name: "Confirmed" },
+  { id: "Completed", name: "Completed" }
+];
 
 
 // --- REVIEW DISPLAY MODAL COMPONENT ---
@@ -160,17 +164,15 @@ type Session = {
   } | null;
 };
 
-const MySessions = () => {
+const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sessionsPerPage] = useState<number>(6);
-  const [showFilters, setShowFilters] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -231,7 +233,7 @@ const MySessions = () => {
 
           return {
             id: s._id,
-            expert: expert.name || "Unknown Expert",
+            expert: (expert.name && /^[0-9a-fA-F]{24}$/.test(expert.name)) ? "Expert" : (expert.name || "Unknown Expert"),
             role: expert.role || "Expert",
             company: expert.company || "N/A",
             category: expert.category || "General",
@@ -422,13 +424,11 @@ const MySessions = () => {
         session.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
         session.category.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || session.status === statusFilter;
-      const matchesCategory = categoryFilter === "all" || session.category === categoryFilter;
-
-      return matchesSearch && matchesStatus && matchesCategory;
+      return matchesSearch && matchesStatus;
     });
     setFilteredSessions(filtered);
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, categoryFilter, sessions]);
+  }, [searchTerm, statusFilter, sessions]);
 
   // Pagination
   const indexOfLastSession = currentPage * sessionsPerPage;
@@ -446,73 +446,7 @@ const MySessions = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  const getStatusColor = (status: Session["status"]) => {
-    switch (status) {
-      case "Confirmed":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "Upcoming":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Completed":
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
 
-  const getStatusIcon = (status: Session["status"]) => {
-    switch (status) {
-      case "Confirmed":
-        return "✅";
-      case "Upcoming":
-        return "⏳";
-      case "Completed":
-        return "🎯";
-      default:
-        return "📝";
-    }
-  };
-
-  // Countdown Timer Component
-  const CountdownTimer = ({ startTime }: { startTime: string }) => {
-    const [timeLeft, setTimeLeft] = useState("");
-
-    useEffect(() => {
-      const updateCountdown = () => {
-        const now = new Date().getTime();
-        const sessionStart = new Date(startTime).getTime();
-        const distance = sessionStart - now;
-
-        if (distance < 0) {
-          setTimeLeft("Session Started");
-          return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        if (days > 0) {
-          setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-        } else if (hours > 0) {
-          setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-        } else {
-          setTimeLeft(`${minutes}m ${seconds}s`);
-        }
-      };
-
-      updateCountdown();
-      const interval = setInterval(updateCountdown, 1000);
-      return () => clearInterval(interval);
-    }, [startTime]);
-
-    return (
-      <div className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg">
-        <Clock className="w-4 h-4 text-gray-600" />
-        <span>{timeLeft}</span>
-      </div>
-    );
-  };
 
   const SessionCardSkeleton = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
@@ -536,430 +470,455 @@ const MySessions = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
-        <Navigation />
+      <div className={`${hideLayout ? '' : 'min-h-screen bg-gray-50 flex flex-col'}`}>
+        {!hideLayout && <Navigation />}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">My Sessions</h1>
-            <p className="text-gray-600">Manage and track your mentoring sessions</p>
-          </div>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          {/* Search and Filter Bar */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-              {/* Search Bar */}
-              <div className="flex-1 w-full relative">
+            {/* --- LEFT SIDEBAR (ADS/TIPS) --- */}
+            {!hideLayout && (
+              <aside className="hidden xl:col-span-2 lg:col-span-3 lg:block">
+                <div className="sticky top-20 space-y-4">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-blue-50 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                    <Star className="w-8 h-8 mb-4 text-amber-400 fill-amber-400" />
+                    <h3 className="font-black text-lg mb-2 text-gray-900">Build Your Career</h3>
+                    <p className="text-gray-500 text-xs font-medium leading-relaxed mb-4">Get personalized career paths and mentorship from industry experts.</p>
+                    <button className="bg-[#004fcb] text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-all w-full shadow-lg shadow-blue-500/20">Learn More</button>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">Pro Tips</span>
+                    </div>
+                    <ul className="space-y-3">
+                      <li className="flex gap-2 text-xs text-gray-600 leading-tight">
+                        <span className="text-blue-500 font-bold">•</span>
+                        Join 5 mins early to check your internet and camera.
+                      </li>
+                      <li className="flex gap-2 text-xs text-gray-600 leading-tight">
+                        <span className="text-blue-500 font-bold">•</span>
+                        Have your CV open for quick reference.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </aside>
+            )}
+
+            {/* --- MAIN CONTENT --- */}
+            <main className={`${hideLayout ? 'col-span-12' : 'col-span-12 lg:col-span-6 xl:col-span-7 space-y-6'}`}>
+
+              {/* Header Card */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">MY SESSIONS</h1>
+                    <p className="text-sm text-gray-500 font-medium">Manage and join your upcoming mock interviews</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                      {sessions.slice(0, 3).map((s, i) => (
+                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
+                          {s.profileImage ? (
+                            <img src={getProfileImageUrl(s.profileImage)} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <div className="w-full h-full bg-[#004fcb] flex items-center justify-center text-[10px] text-white font-bold">{s.expert.charAt(0)}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-xs font-bold text-[#004fcb] ml-1">{sessions.length} TOTAL</span>
+                  </div>
+                </div>
+
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search sessions..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all duration-200 bg-white"
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-4 focus:ring-[#004fcb]/5 focus:border-[#004fcb]/20 outline-none transition-all text-sm font-medium"
                   />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm("")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                </div>
+              </div>
+
+              {/* Status Tabs */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm">
+                <FilterScrollStrip
+                  items={STATUSES}
+                  selectedItem={statusFilter}
+                  onSelect={setStatusFilter}
+                />
+              </div>
+
+              {/* Sessions Grid */}
+              {loading ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {[1, 2, 3].map(i => <SessionCardSkeleton key={i} />)}
+                </div>
+              ) : currentSessions.length === 0 ? (
+                <div className="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-20 text-center">
+                  <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Calendar className="w-10 h-10 text-[#004fcb]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No matching sessions</h3>
+                  <p className="text-gray-500 max-w-xs mx-auto">We couldn't find any sessions matching your current filters.</p>
+                  <button
+                    onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
+                    className="mt-6 text-[#004fcb] font-bold hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {currentSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="group bg-white rounded-2xl border border-gray-200 hover:border-[#004fcb]/30 p-5 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-[#004fcb]/5 relative flex flex-col sm:flex-row gap-6"
                     >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Filter Buttons */}
-              <div className="flex gap-3 w-full lg:w-auto">
-                <div className="relative flex-1 lg:flex-none">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white appearance-none cursor-pointer"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="Upcoming">Upcoming</option>
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-
-                <div className="relative flex-1 lg:flex-none">
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white appearance-none cursor-pointer"
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="IT">IT & Development</option>
-                    <option value="HR">HR & Recruitment</option>
-                    <option value="Product">Product Management</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Career">Career Coaching</option>
-                  </select>
-                </div>
-
-                {/* Mobile Filter Toggle */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Filter className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-
-              {/* Results Count */}
-              <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">
-                  {filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-            </div>
-
-            {/* Active Filters */}
-            {(searchTerm || statusFilter !== 'all' || categoryFilter !== 'all') && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-gray-500">Active filters:</span>
-
-                  {searchTerm && (
-                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded border border-blue-200">
-                      <span>Search: "{searchTerm}"</span>
-                      <button
-                        onClick={() => setSearchTerm("")}
-                        className="ml-1 hover:text-blue-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-
-                  {statusFilter !== 'all' && (
-                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-sm rounded border border-green-200">
-                      <span>Status: {statusFilter}</span>
-                      <button
-                        onClick={() => setStatusFilter("all")}
-                        className="ml-1 hover:text-green-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-
-                  {categoryFilter !== 'all' && (
-                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded border border-purple-200">
-                      <span>Category: {categoryFilter}</span>
-                      <button
-                        onClick={() => setCategoryFilter("all")}
-                        className="ml-1 hover:text-purple-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setStatusFilter("all");
-                      setCategoryFilter("all");
-                    }}
-                    className="text-sm text-gray-600 hover:text-gray-800 underline"
-                  >
-                    Clear all
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sessions Grid */}
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map(i => <SessionCardSkeleton key={i} />)}
-            </div>
-          ) : currentSessions.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl border border-gray-200 border-dashed">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-[#004fcb]" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">No sessions found</h3>
-              <p className="text-gray-500">Your scheduled interviews will appear here.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="group bg-white rounded-xl border border-gray-200 hover:border-[#004fcb] p-6 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col relative"
-                >
-                  {/* Top Section: Role & Company */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#004fcb] transition-colors line-clamp-1">
-                        {session.role}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm font-medium text-gray-700">{session.company}</span>
-                        {session.expert && (
-                          <span className="text-xs text-gray-500">• {session.expert}</span>
-                        )}
+                      {/* Left: Date/Time Badge */}
+                      <div className="flex flex-row sm:flex-col items-center justify-center sm:w-24 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 shrink-0">
+                        <span className="text-xs font-black text-[#004fcb] uppercase">{new Date(session.startTime || 0).toLocaleDateString('en-US', { month: 'short' })}</span>
+                        <span className="text-2xl font-black text-gray-900">{new Date(session.startTime || 0).getDate()}</span>
+                        <span className="text-[10px] font-bold text-gray-400 mt-1">{new Date(session.startTime || 0).getFullYear()}</span>
                       </div>
-                    </div>
-                    {/* Square Profile Image */}
-                    {session.profileImage ? (
-                      <img
-                        src={getProfileImageUrl(session.profileImage)}
-                        alt={session.expert}
-                        className="w-12 h-12 rounded-lg object-cover border border-gray-100 shadow-sm"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-blue-50 text-[#004fcb] flex items-center justify-center font-bold text-lg border border-blue-100">
-                        {session.expert.charAt(0)}
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Meta Info: Location, Price, Duration */}
-                  <div className="space-y-2 mb-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span>{session.location || 'Remote'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>{session.date} • {session.time}</span>
-                    </div>
-                    <div className="font-semibold text-gray-900 mt-2">
-                      {session.price}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="mt-auto flex items-center gap-3">
-                    {/* Primary Button (Like 'Apply Now') */}
-                    {isSessionEnded(session) ? (
-                      <button
-                        onClick={() => setReviewSession(session)}
-                        className="flex-1 bg-white border border-[#004fcb] text-[#004fcb] py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Star className="w-4 h-4" />
-                        Rate Expert
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleJoinMeeting(session)}
-                        disabled={!isSessionActive(session)}
-                        className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${isSessionActive(session)
-                          ? "bg-[#004fcb] text-white hover:bg-[#003bb5] shadow-sm shadow-blue-200"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" // Disabled look
-                          }`}
-                      >
-                        <Video className="w-4 h-4" />
-                        {isSessionActive(session) ? "Join Meeting" : "Join Later"}
-                      </button>
-                    )}
-
-                    {/* Secondary Action (Menu or Review) */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
-                        className="p-2.5 rounded-lg border border-gray-200 hover:border-[#004fcb] hover:text-[#004fcb] transition-colors"
-                      >
-                        <MoreVertical className="w-5 h-5 text-gray-500" />
-                      </button>
-
-                      {openDropdownId === session.sessionId && (
-                        <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                          <button
-                            onClick={() => handleFetchReviews(session, 'expert_feedback')}
-                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
-                          >
-                            Expert Feedback
-                          </button>
-                          <button
-                            onClick={() => handleFetchReviews(session, 'my_review')}
-                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            My Review
-                          </button>
+                      {/* Middle: Content */}
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              {isSessionActive(session) ? (
+                                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 text-[8px] font-black uppercase lg:animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                  Live Now
+                                </span>
+                              ) : (
+                                <span className={`text-[8px] font-black px-2 py-0.5 rounded tracking-tighter uppercase border ${session.status.toLowerCase() === 'completed' ? 'bg-green-50 text-green-700 border-green-100' :
+                                  'bg-blue-50 text-blue-700 border-blue-100'
+                                  }`}>
+                                  {session.status}
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                {session.time} - {new Date(session.endTime || 0).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                <span className="ml-1 text-gray-300">|</span>
+                                <span className="ml-1">{session.duration}</span>
+                              </span>
+                            </div>
+                            <h3 className="text-xl font-black text-gray-900 leading-tight group-hover:text-[#004fcb] transition-colors">
+                              {session.expertise?.[0] || session.role}
+                            </h3>
+                            <div className="flex items-center gap-3 mt-2">
+                              <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                {session.profileImage ? (
+                                  <img src={getProfileImageUrl(session.profileImage)} className="w-full h-full object-cover" alt="" />
+                                ) : (
+                                  <div className="w-full h-full bg-[#004fcb]/10 text-[#004fcb] text-[8px] font-bold flex items-center justify-center">{session.expert.charAt(0)}</div>
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">With Expert</span>
+                                <span className="text-sm font-bold text-gray-700">
+                                  {(/^[0-9a-fA-F]{24}$/.test(session.expert)) ? "Platform Expert" : session.expert}
+                                  <span className="text-gray-400 font-medium ml-1">@ {session.company}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-lg font-black text-gray-900">{session.price}</span>
+                            {isSessionActive(session) && (
+                              <div className="flex flex-col items-end">
+                                <span className="text-[8px] font-black text-[#004fcb] uppercase tracking-widest">Meeting ID</span>
+                                <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{session.sessionId}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      {/* Overlay to close */}
-                      {openDropdownId === session.sessionId && (
-                        <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
-                      )}
+
+                        {/* Topics */}
+                        <div className="flex flex-wrap gap-2">
+                          {session.expertise.map((topic, idx) => (
+                            <span key={idx} className="bg-gray-50 text-gray-600 text-[10px] font-bold px-2 py-1 rounded-lg border border-gray-100 capitalize">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
+                          {session.status.toLowerCase() === 'completed' || isSessionEnded(session) ? (
+                            <button
+                              onClick={() => setReviewSession(session)}
+                              className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-[#004fcb] text-[#004fcb] rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                            >
+                              <Star className="w-3.5 h-3.5" />
+                              Rate Now
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleJoinMeeting(session)}
+                              disabled={!isSessionActive(session)}
+                              className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isSessionActive(session)
+                                ? "bg-[#004fcb] text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20"
+                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                }`}
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              {isSessionActive(session) ? "Enter Meeting Room" : getSessionStatusInfo(session).reason}
+                            </button>
+                          )}
+
+                          <div className="relative ml-auto">
+                            <button
+                              onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
+                              className="p-2.5 rounded-xl border border-gray-200 hover:border-[#004fcb] text-gray-400 hover:text-[#004fcb] transition-all"
+                            >
+                              <MoreVertical className="w-5 h-5" />
+                            </button>
+                            {openDropdownId === session.sessionId && (
+                              <div className="absolute right-0 bottom-full mb-3 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden py-1">
+                                <button
+                                  onClick={() => handleFetchReviews(session, 'expert_feedback')}
+                                  className="w-full text-left px-5 py-3 text-[10px] font-black text-gray-700 hover:bg-gray-50 uppercase tracking-widest border-b border-gray-50"
+                                >
+                                  Expert Feedback
+                                </button>
+                                <button
+                                  onClick={() => handleFetchReviews(session, 'my_review')}
+                                  className="w-full text-left px-5 py-3 text-[10px] font-black text-gray-700 hover:bg-gray-50 uppercase tracking-widest"
+                                >
+                                  My Review
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* --- READ-ONLY REVIEW MODAL --- */}
-          <ReviewDetailsModal
-            isOpen={!!viewReviewData}
-            onClose={() => setViewReviewData(null)}
-            type={viewReviewData?.type || 'expert_feedback'}
-            data={viewReviewData?.data}
-          />
-
-          {/* --- REVIEW SESSION MODAL --- */}
-          {reviewSession && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-100 scale-100">
-              <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setReviewSession(null)}></div>
-              <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 h-auto max-h-[90vh] overflow-y-auto">
-                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
-                  <h3 className="font-bold text-gray-900 text-lg">Rate Your Expert</h3>
-                  <button onClick={() => setReviewSession(null)} className="text-gray-400 hover:text-gray-600">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="p-6 space-y-6">
-                  <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-lg">
-                      {reviewSession.expert.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Reviewing Expert</p>
-                      <p className="font-bold text-gray-900">{reviewSession.expert}</p>
-                    </div>
-                  </div>
-
-                  {/* Ratings */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Overall Experience</label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onClick={() => setReviewForm(prev => ({ ...prev, overallRating: star }))}
-                            className={`transition-transform hover:scale-110 ${star <= reviewForm.overallRating ? 'text-amber-400' : 'text-gray-300'}`}
-                          >
-                            <Star className="w-8 h-8 fill-current" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Expertise / Knowledge</label>
-                        <input
-                          type="number" min="1" max="5"
-                          value={reviewForm.technicalRating}
-                          onChange={e => setReviewForm(prev => ({ ...prev, technicalRating: parseInt(e.target.value) }))}
-                          className="w-full border rounded p-2"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Communication</label>
-                        <input
-                          type="number" min="1" max="5"
-                          value={reviewForm.communicationRating}
-                          onChange={e => setReviewForm(prev => ({ ...prev, communicationRating: parseInt(e.target.value) }))}
-                          className="w-full border rounded p-2"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Text Inputs */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">What did you like? (Strengths)</label>
-                    <input
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="Very knowledgeable, Patient..."
-                      value={reviewForm.strengths}
-                      onChange={e => setReviewForm(prev => ({ ...prev, strengths: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Areas for Improvement</label>
-                    <input
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="Could be more structured..."
-                      value={reviewForm.weaknesses}
-                      onChange={e => setReviewForm(prev => ({ ...prev, weaknesses: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Feedback</label>
-                    <textarea
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[120px]"
-                      placeholder="Share your experience with this expert..."
-                      value={reviewForm.feedback}
-                      onChange={e => setReviewForm(prev => ({ ...prev, feedback: e.target.value }))}
-                    ></textarea>
-                  </div>
-
+              {/* Pagination (Tighter design) */}
+              {filteredSessions.length > sessionsPerPage && (
+                <div className="flex items-center justify-center gap-2 pt-6">
                   <button
-                    className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleSubmitReview}
-                    disabled={submittingReview}
-                  >
-                    {submittingReview && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {submittingReview ? "Submitting..." : "Submit Review"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-
-          {/* Pagination */}
-          {filteredSessions.length > sessionsPerPage && (
-            <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <button
-                onClick={prevPage}
-                disabled={currentPage === 1}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${currentPage === 1
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                  }`}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </button>
-
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                  <button
-                    key={number}
-                    onClick={() => paginate(number)}
-                    className={`w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors ${currentPage === number
-                      ? "bg-gray-900 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${currentPage === 1 ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-900 border-gray-200 hover:border-[#004fcb]"
                       }`}
                   >
-                    {number}
+                    <ChevronLeft className="w-5 h-5" />
                   </button>
-                ))}
-              </div>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => paginate(i + 1)}
+                      className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === i + 1 ? "bg-[#004fcb] text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-[#004fcb]"
+                        }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${currentPage === totalPages ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-900 border-gray-200 hover:border-[#004fcb]"
+                      }`}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </main>
 
-              <button
-                onClick={nextPage}
-                disabled={currentPage === totalPages}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${currentPage === totalPages
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                  }`}
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            {/* --- RIGHT SIDEBAR (SUMMARY/ADS) --- */}
+            {!hideLayout && (
+              <aside className="hidden xl:col-span-3 lg:col-span-3 lg:block">
+                <div className="sticky top-20 space-y-6">
+                  {/* Summary Card */}
+                  <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm overflow-hidden relative">
+                    <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-50 rounded-full blur-2xl"></div>
+                    <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-6">Session Summary</h3>
 
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#004fcb]">
+                            <Video className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900">{sessions.filter(s => s.status.toLowerCase() === 'confirmed').length}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase">Upcoming</p>
+                          </div>
+                        </div>
+                      </div>
 
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+                            <CheckCircle className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900">{sessions.filter(s => s.status.toLowerCase() === 'completed').length}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase">Completed</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <div className="bg-gray-100 rounded-2xl p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#004fcb] flex items-center justify-center text-white shrink-0">
+                          <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-600 leading-tight">Need help with a session? <span className="text-[#004fcb] cursor-pointer">Contact Support</span></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ad Placeholder */}
+                  <div className="rounded-3xl overflow-hidden bg-white border border-gray-200 p-6 relative group cursor-pointer shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500">
+                    <div className="absolute inset-0 bg-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="relative z-10">
+                      <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded tracking-widest uppercase inline-block mb-3 border border-amber-200">Premium Tool</span>
+                      <h4 className="text-gray-900 font-black text-xl mb-2 leading-tight">Mock AI Interviewer</h4>
+                      <p className="text-gray-500 text-xs font-medium mb-5 leading-relaxed">Practice with GPT-4 powered interviewers before your real session.</p>
+                      <button className="w-full bg-[#004fcb] text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-wider hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/10">Try Now</button>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            )}
+          </div>
         </div>
 
-        <BottomNav />
-      </div >
-      <Footer />
+
+        {/* --- READ-ONLY REVIEW MODAL --- */}
+        <ReviewDetailsModal
+          isOpen={!!viewReviewData}
+          onClose={() => setViewReviewData(null)}
+          type={viewReviewData?.type || 'expert_feedback'}
+          data={viewReviewData?.data}
+        />
+
+        {/* --- REVIEW SESSION MODAL --- */}
+        {reviewSession && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-100 scale-100">
+            <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setReviewSession(null)}></div>
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 h-auto max-h-[90vh] overflow-y-auto">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
+                <h3 className="font-bold text-gray-900 text-lg">Rate Your Expert</h3>
+                <button onClick={() => setReviewSession(null)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-lg">
+                    {reviewSession.expert.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Reviewing Expert</p>
+                    <p className="font-bold text-gray-900">{reviewSession.expert}</p>
+                  </div>
+                </div>
+
+                {/* Ratings */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Overall Experience</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setReviewForm(prev => ({ ...prev, overallRating: star }))}
+                          className={`transition-transform hover:scale-110 ${star <= reviewForm.overallRating ? 'text-amber-400' : 'text-gray-300'}`}
+                        >
+                          <Star className="w-8 h-8 fill-current" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Expertise / Knowledge</label>
+                      <input
+                        type="number" min="1" max="5"
+                        value={reviewForm.technicalRating}
+                        onChange={e => setReviewForm(prev => ({ ...prev, technicalRating: parseInt(e.target.value) }))}
+                        className="w-full border rounded p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Communication</label>
+                      <input
+                        type="number" min="1" max="5"
+                        value={reviewForm.communicationRating}
+                        onChange={e => setReviewForm(prev => ({ ...prev, communicationRating: parseInt(e.target.value) }))}
+                        className="w-full border rounded p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Inputs */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">What did you like? (Strengths)</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Very knowledgeable, Patient..."
+                    value={reviewForm.strengths}
+                    onChange={e => setReviewForm(prev => ({ ...prev, strengths: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Areas for Improvement</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Could be more structured..."
+                    value={reviewForm.weaknesses}
+                    onChange={e => setReviewForm(prev => ({ ...prev, weaknesses: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Feedback</label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[120px]"
+                    placeholder="Share your experience with this expert..."
+                    value={reviewForm.feedback}
+                    onChange={e => setReviewForm(prev => ({ ...prev, feedback: e.target.value }))}
+                  ></textarea>
+                </div>
+
+                <button
+                  className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSubmitReview}
+                  disabled={submittingReview}
+                >
+                  {submittingReview && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {!hideLayout && <BottomNav />}
+        {!hideLayout && <Footer />}
+      </div>
     </>
   );
 };
