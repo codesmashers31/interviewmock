@@ -201,7 +201,7 @@ const Navigation = () => {
 
   const navItems = [
     { name: "Find HRs", href: "/dashboard", icon: <Users size={18} /> },
-    { name: "Find Mentors", href: "/find-mentors", icon: <GraduationCap size={18} /> },
+    // { name: "Find Mentors", href: "/find-mentors", icon: <GraduationCap size={18} /> },
     { name: "My Sessions", href: "/my-sessions", icon: <Calendar size={18} /> },
   ];
 
@@ -265,7 +265,7 @@ const Navigation = () => {
             {/* Right side actions */}
             <div className="hidden md:flex items-center space-x-2 lg:space-x-3">
               {/* Search */}
-              <div ref={searchRef} className={`relative transition-all duration-300 ${isSearchOpen ? "w-48 lg:w-72" : "w-10 lg:w-12"}`}>
+              {/* <div ref={searchRef} className={`relative transition-all duration-300 ${isSearchOpen ? "w-48 lg:w-72" : "w-10 lg:w-12"}`}>
                 <button
                   onClick={toggleSearch}
                   className={`absolute right-0 top-1/2 transform -translate-y-1/2 p-2 lg:p-2.5 text-slate-500 hover:text-[#004fcb] rounded-lg hover:bg-blue-50 transition-all duration-200 z-10 ${isSearchOpen ? "bg-transparent text-slate-700" : ""
@@ -288,7 +288,7 @@ const Navigation = () => {
                     />
                   </form>
                 </div>
-              </div>
+              </div> */}
 
               {/* Notifications Dropdown */}
               <div className="relative" ref={notificationRef}>

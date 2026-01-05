@@ -1,81 +1,68 @@
-import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
 import {
-  Star, MapPin, Clock, BookOpen, Users, Award,
+  Star, MapPin, Clock, Users, Award,
   Calendar, CheckCircle, CreditCard, Shield, Video,
-  ChevronLeft, ChevronRight, X, ThumbsUp, Zap,
-  User, Settings2, Home, Search, MessageCircle, Briefcase
+  ChevronLeft, ChevronRight, X, ThumbsUp, Zap, MessageCircle, Briefcase,
+  Share2, Check, Info, ArrowRight, Timer
 } from "lucide-react";
 import Swal from "sweetalert2";
 import Navigation from "./Navigation";
 import Footer from "./Footer";
 import { mapExpertToProfile, Profile } from "../lib/bookSessionUtils";
 
+/**
+ * Enhanced Skeleton Loader matching the LinkedIn-style design
+ */
 const BookSessionSkeleton = () => (
-  <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
+  <div className="min-h-screen bg-[#f3f2ef] pb-20 lg:pb-0">
     <Navigation />
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
-      {/* Banner Skeleton */}
-      <div className="w-full h-48 md:h-64 bg-gray-200 rounded-2xl mb-8"></div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-pulse">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Content Skeleton */}
-        <div className="lg:col-span-8 space-y-8">
-          {/* Promo Banner Skeleton */}
-          <div className="h-20 bg-gray-200 rounded-xl"></div>
-
-          {/* Profile Card Skeleton */}
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-24 h-24 bg-gray-200 rounded-2xl shrink-0"></div>
-              <div className="flex-1 space-y-4">
-                <div className="flex justify-between">
-                  <div className="h-8 bg-gray-200 w-48 rounded"></div>
-                  <div className="h-6 bg-gray-200 w-24 rounded-full"></div>
-                </div>
-                <div className="h-4 bg-gray-200 w-32 rounded"></div>
-                <div className="grid grid-cols-3 gap-4 mt-6">
-                  <div className="h-16 bg-gray-200 rounded-xl"></div>
-                  <div className="h-16 bg-gray-200 rounded-xl"></div>
-                  <div className="h-16 bg-gray-200 rounded-xl"></div>
-                </div>
+        <div className="lg:col-span-8 space-y-6">
+          {/* Profile Header Skeleton */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="h-48 bg-gray-200"></div>
+            <div className="px-6 pb-6 relative">
+              <div className="absolute -top-16 left-6 w-32 h-32 rounded-full border-4 border-white bg-gray-100 shadow-sm"></div>
+              <div className="mt-20 space-y-3">
+                <div className="h-8 bg-gray-200 w-64 rounded-lg"></div>
+                <div className="h-4 bg-gray-200 w-96 rounded"></div>
+                <div className="h-4 bg-gray-200 w-48 rounded"></div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <div className="h-10 bg-gray-200 w-32 rounded-full"></div>
+                <div className="h-10 bg-gray-200 w-32 rounded-full"></div>
               </div>
             </div>
           </div>
 
-          {/* Tabs Skeleton */}
-          <div className="bg-white rounded-2xl border border-gray-200 h-96">
-            <div className="border-b border-gray-100 p-1 flex">
-              <div className="h-12 w-1/2 bg-gray-100 rounded-t-lg"></div>
-              <div className="h-12 w-1/2 bg-white rounded-t-lg"></div>
+          {/* Details Content Skeleton */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+            <div className="h-6 bg-gray-200 w-48 rounded"></div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-24 bg-gray-100 rounded-xl"></div>
+              <div className="h-24 bg-gray-100 rounded-xl"></div>
+              <div className="h-24 bg-gray-100 rounded-xl"></div>
             </div>
-            <div className="p-8 space-y-6">
-              <div className="h-6 w-48 bg-gray-200 rounded"></div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="h-24 bg-gray-100 rounded-xl"></div>
-                <div className="h-24 bg-gray-100 rounded-xl"></div>
-                <div className="h-24 bg-gray-100 rounded-xl"></div>
-              </div>
-              <div className="space-y-3">
-                <div className="h-4 w-full bg-gray-100 rounded"></div>
-                <div className="h-4 w-full bg-gray-100 rounded"></div>
-                <div className="h-4 w-3/4 bg-gray-100 rounded"></div>
-              </div>
+            <div className="space-y-3">
+              <div className="h-4 w-full bg-gray-50 rounded"></div>
+              <div className="h-4 w-full bg-gray-50 rounded"></div>
+              <div className="h-4 w-3/4 bg-gray-50 rounded"></div>
             </div>
           </div>
         </div>
 
         {/* Sidebar Skeleton */}
         <div className="hidden lg:block lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 h-auto">
-            <div className="h-6 bg-gray-200 w-1/2 rounded mb-6"></div>
-            <div className="flex gap-2 overflow-hidden mb-6">
-              {[1, 2, 3, 4].map(i => <div key={i} className="h-20 w-16 bg-gray-200 rounded-xl shrink-0"></div>)}
-            </div>
+          <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="h-6 bg-gray-200 w-2/3 rounded mb-6"></div>
             <div className="grid grid-cols-2 gap-3">
-              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-16 bg-gray-200 rounded-xl"></div>)}
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-14 bg-gray-100 rounded-lg"></div>)}
             </div>
+            <div className="mt-8 h-12 bg-gray-200 w-full rounded-xl"></div>
           </div>
         </div>
       </div>
@@ -90,9 +77,7 @@ const BookSessionPage = () => {
   const navigate = useNavigate();
   const { profile: existingProfile, expertId: stateExpertId } = location.state || {};
 
-  // Use expertId from state, or fallback to profile.id if available
   const expertId = stateExpertId || existingProfile?.id;
-
 
   const [profile, setProfile] = useState<Profile | null>(existingProfile || null);
   const [loading, setLoading] = useState(!existingProfile);
@@ -103,11 +88,7 @@ const BookSessionPage = () => {
       const fetchProfile = async () => {
         try {
           setLoading(true);
-          // Since there isn't a direct public by-ID endpoint, we fetch all verified experts and filter
-          // Optimized approach would be adding a specific endpoint in backend
           const response = await axios.get("/api/expert/verified");
-
-
           if (response.data?.success && response.data?.data) {
             const foundExpert = response.data.data.find((e: any) =>
               e._id === expertId || e.userId === expertId
@@ -132,69 +113,34 @@ const BookSessionPage = () => {
     }
   }, [expertId, profile]);
 
-  const [selectedDate, setSelectedDate] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(new Date().getDate() - 1);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; available: boolean } | null>(null);
   const [bookedSessions, setBookedSessions] = useState<any[]>([]);
   const [showMobileBooking, setShowMobileBooking] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Fetch booked sessions
+  // Scroll active date into view on mount or when navigation drawer opens
   useEffect(() => {
-    if (expertId) {
-      const fetchSessions = async () => {
-        try {
-          // Assuming this endpoint returns all sessions for the expert
-          const res = await axios.get(`/api/sessions/expert/${expertId}`);
-          if (Array.isArray(res.data)) {
-            setBookedSessions(res.data);
-          }
-        } catch (err) {
-          console.error("Failed to fetch booked sessions", err);
-        }
-      };
-      fetchSessions();
-    }
-  }, [expertId]);
-
-  const showPaymentPage = () => {
-    if (!profile) return;
-
-    navigate("/payment", {
-      state: {
-        bookingDetails: {
-          expertId: expertId, // Ensure we have an ID
-          expertName: profile.name,
-          expertRole: profile.role,
-          date: dates[selectedDate],
-          slot: selectedSlot,
-          price: profile.price,
-          duration: profile.availability?.sessionDuration || 60,
-          category: profile.category
-        }
+    if (carouselRef.current) {
+      const activeBtn = carouselRef.current.querySelector('[data-active="true"]');
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
-    });
+    }
+  }, [selectedDate, showMobileBooking]);
+
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const { scrollLeft, clientWidth } = carouselRef.current;
+      const amount = clientWidth * 0.7;
+      carouselRef.current.scrollTo({
+        left: direction === 'left' ? scrollLeft - amount : scrollLeft + amount,
+        behavior: 'smooth'
+      });
+    }
   };
-
-  if (loading) {
-    return <BookSessionSkeleton />;
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">{errorValue || "Profile Not Found"}</h2>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-          >
-            Return to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Reviews
   interface Review {
@@ -213,15 +159,23 @@ const BookSessionPage = () => {
 
   useEffect(() => {
     if (expertId) {
+      const fetchSessions = async () => {
+        try {
+          const res = await axios.get(`/api/sessions/expert/${expertId}`);
+          if (Array.isArray(res.data)) {
+            setBookedSessions(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch booked sessions", err);
+        }
+      };
+      fetchSessions();
+
       const fetchReviews = async () => {
         try {
           setReviewsLoading(true);
           const response = await axios.get(`/api/reviews/expert/${expertId}`);
           if (response.data.success) {
-            // Format existing date if needed, though controller returns ISO string usually.
-            // Let's rely on the controller or format it here.
-            // Controller returns `createdAt` as `date`.
-            // We can format it to relative time here or just use locale string.
             const formattedReviews = response.data.data.map((r: any) => ({
               ...r,
               date: new Date(r.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })
@@ -238,37 +192,35 @@ const BookSessionPage = () => {
     }
   }, [expertId]);
 
-  // Dates for next 7 days
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    return date;
-  });
+  const dates = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1));
+  }, []);
 
-  // Get available slots for selected date
   const getAvailableSlots = (dateIndex: number) => {
     if (!profile?.availability) return [];
 
     const date = dates[dateIndex];
-    // Check break dates
+    if (!date) return [];
+
     const isBreakDate = profile.availability.breakDates?.some((breakDate: any) => {
-      const bd = new Date(breakDate.start); // Assuming breakDate has a start property
+      const bd = new Date(breakDate.start);
       return bd.toDateString() === date.toDateString();
     });
 
     if (isBreakDate) return [];
 
-    // User data uses "mon", "tue", "fri" keys
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase(); // "mon", "tue", "wed"...
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
     const weeklyRanges = profile.availability.weekly?.[dayName] || [];
 
-    // Helper to parse "HH:mm" to minutes
     const parseTimeToMinutes = (timeStr: string) => {
       const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
     };
 
-    // Helper to format minutes to "HH:mm AM/PM"
     const formatMinutesToTime = (totalMinutes: number) => {
       const adjustedMinutes = totalMinutes % (24 * 60);
       const hours = Math.floor(adjustedMinutes / 60);
@@ -278,7 +230,7 @@ const BookSessionPage = () => {
       return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     };
 
-    const sessionDuration = profile.availability.sessionDuration || 60; // Default to 60 if missing
+    const sessionDuration = profile.availability.sessionDuration || 60;
     const generatedSlots: { time: string; available: boolean }[] = [];
 
     weeklyRanges.forEach((range: { from: string; to: string }) => {
@@ -287,29 +239,19 @@ const BookSessionPage = () => {
       let currentMinutes = parseTimeToMinutes(range.from);
       let endMinutes = parseTimeToMinutes(range.to);
 
-      // Handle ranges crossing midnight
       if (endMinutes < currentMinutes) {
         endMinutes += 24 * 60;
       }
 
       while (currentMinutes + sessionDuration <= endMinutes) {
-        // Create Date object for this slot start
         const slotStartMinutes = currentMinutes;
         const slotDate = new Date(date);
         slotDate.setHours(Math.floor(slotStartMinutes / 60), slotStartMinutes % 60, 0, 0);
 
-        // Check if this slot is already booked
         const isBooked = bookedSessions.some(session => {
           if (session.status === 'cancelled') return false;
-          // Assuming session.startTime is ISO string
           const sStart = new Date(session.startTime);
           const sEnd = new Date(session.endTime);
-
-          // Simple overlap check or exact start match
-          // A session blocks this slot if it starts at the same time
-          // OR if it overlaps significantly.
-          // For simple "slot based" system, exact start match is usually sufficient if fixed duration.
-          // But let's check overlap: SlotStart < SessionEnd && SlotEnd > SessionStart
           const slotEndMinutes = currentMinutes + sessionDuration;
           const slotEndDate = new Date(date);
           slotEndDate.setHours(Math.floor(slotEndMinutes / 60), slotEndMinutes % 60, 0, 0);
@@ -328,591 +270,477 @@ const BookSessionPage = () => {
       }
     });
 
-    return generatedSlots.sort((a, b) => {
-      // Simple sort by time string
-      return a.time.localeCompare(b.time);
-    });
+    return generatedSlots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Calculate total available slots for the next 7 days
   const totalAvailableSlots = dates.reduce((acc, _, index) => {
     return acc + getAvailableSlots(index).length;
   }, 0);
 
   const currentSlots = getAvailableSlots(selectedDate);
 
-  // Category colors: now gray theme
-  const getCategoryColor = (section: string | number) => {
-    const colors: Record<string, string> = {
-      "IT": "text-gray-700 bg-gray-200",
-      "HR": "text-gray-700 bg-gray-200",
-      "Business": "text-gray-700 bg-gray-200"
-    };
-    return typeof section === "string" && section in colors
-      ? colors[section]
-      : "text-gray-700 bg-gray-200";
+  const showPaymentPage = () => {
+    if (!profile) return;
+    navigate("/payment", {
+      state: {
+        bookingDetails: {
+          expertId: expertId,
+          expertName: profile.name,
+          expertRole: profile.role,
+          date: dates[selectedDate],
+          slot: selectedSlot,
+          price: profile.price,
+          duration: profile.availability?.sessionDuration || 60,
+          category: profile.category
+        }
+      }
+    });
   };
 
-  // Booking Banner Component
-  const BookingBanner = () => (
-    <div className="relative rounded-2xl overflow-hidden shadow-xl mb-8 group border border-blue-100">
-      <div
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1551836022-4c4c79ecde51?auto=format&fit=crop&w=1200&q=80')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#002a6b]/90 via-[#004fcb]/80 to-[#4285f4]/80" />
-      <div className="relative z-10 px-6 py-8 md:px-12 md:py-12 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4 border border-white/20">
-            <Zap className="w-4 h-4 text-yellow-300" fill="currentColor" />
-            <span className="text-sm font-bold tracking-wide">LIMITED SPOTS AVAILABLE</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-            Master Your Next <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">Interview</span>
-          </h1>
-          <p className="text-lg md:text-xl text-blue-100 mb-6 max-w-2xl mx-auto leading-relaxed">
-            Get personalized coaching from industry experts. Boost your confidence with realistic mock interviews and detailed feedback.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="px-8 py-3 bg-white text-[#004fcb] hover:bg-blue-50 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Book Session Now
-            </button>
-            <button className="px-8 py-3 bg-[#004fcb]/50 hover:bg-[#004fcb]/70 border border-white/30 rounded-xl font-medium text-white backdrop-blur-sm transition-all duration-200 flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              View Testimonials
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  if (loading) return <BookSessionSkeleton />;
 
-  // Promo Banner Component
-  const PromoBanner = () => (
-    <div className="relative mb-8">
-      <div className="rounded-xl border border-blue-100 bg-blue-50/50 shadow-sm hover:shadow-md transition-all duration-300">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-5">
-          <div className="text-center md:text-left">
-            <h3 className="text-lg md:text-xl font-semibold text-[#002a6b]">
-              Unlock Your First Mock Interview 🚀
-            </h3>
-            <p className="text-sm text-slate-600">
-              Get <span className="font-bold text-[#004fcb]">20% OFF</span> your first session with top industry experts.
-            </p>
-          </div>
-          <button className="px-5 py-2.5 rounded-lg bg-[#004fcb] text-white font-medium text-sm hover:bg-[#003bb5] transition-colors shadow-sm shadow-blue-200">
-            Claim Offer
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f3f2ef]">
+        <div className="text-center bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{errorValue || "Profile Not Found"}</h2>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-[#004fcb] text-white rounded-lg hover:bg-[#003bb5] transition-colors font-medium"
+          >
+            Return to Home
           </button>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Booking Sidebar Component
-  const BookingSidebar = () => (
-    <div className="space-y-6">
-      <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-gray-600" />
-          Select Date & Time
-        </h3>
-        <div className="flex gap-3 mb-6 overflow-x-auto pb-4">
-          {dates.map((date, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => setSelectedDate(index)}
-              className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all border ${selectedDate === index
-                ? "bg-[#004fcb] text-white shadow-md transform scale-105 border-[#004fcb]"
-                : "bg-white text-slate-700 hover:bg-blue-50 border-gray-200"
-                }`}
-            >
-              <span className="font-semibold text-sm">
-                {index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'short' })}
-              </span>
-              <span className={`text-xs mt-1 ${selectedDate === index ? 'text-blue-100' : 'text-slate-500'}`}>
-                {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            </button>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-3 min-h-[200px]">
-          {currentSlots.length > 0 ? (
-            currentSlots.map((slot: any, index: number) => (
-              <button
-                key={index}
-                disabled={!slot.available}
-                onClick={() => setSelectedSlot(slot)}
-                className={`p-4 rounded-xl border-2 text-center transition-all ${slot.available
-                  ? selectedSlot?.time === slot.time
-                    ? "border-[#004fcb] bg-blue-50 text-[#004fcb] shadow-md transform scale-105 font-bold"
-                    : "border-gray-100 hover:border-[#004fcb]/50 hover:bg-blue-50/50 text-slate-700"
-                  : "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                  }`}
-              >
-                <div className="font-semibold">{slot.time}</div>
-                <div className={`text-xs mt-1 ${slot.available ? (selectedSlot?.time === slot.time ? 'text-[#004fcb]' : 'text-green-600') : 'text-red-300'}`}>
-                  {slot.available ? "✓ Available" : "✗ Booked"}
-                </div>
-              </button>
-            ))
-          ) : (
-            <div className="col-span-2 flex flex-col items-center justify-center text-gray-500 py-10">
-              <Calendar className="w-10 h-10 mb-2 opacity-50" />
-              <p>No available slots for this date.</p>
-            </div>
-          )}
+  const getCategoryColor = (section: string) => {
+    const colors: Record<string, string> = {
+      "IT": "bg-blue-50 text-[#004fcb] border-blue-100",
+      "HR": "bg-purple-50 text-purple-700 border-purple-100",
+      "Business": "bg-orange-50 text-orange-700 border-orange-100",
+      "Design": "bg-pink-50 text-pink-700 border-pink-100"
+    };
+    return colors[section] || "bg-gray-50 text-gray-700 border-gray-100";
+  };
+
+  // LinkedIn-style Profile Header
+  const bannerImage = useMemo(() => {
+    const banners = [
+      "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1508615039623-a25605d2b022?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80"
+    ];
+    // Use expertId to consistently pick a banner for the same expert
+    const charSum = expertId ? expertId.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) : 0;
+    return banners[charSum % banners.length];
+  }, [expertId]);
+
+  const ProfileHeader = () => (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* Banner */}
+      <div className="h-40 md:h-48 relative overflow-hidden">
+        <img
+          src={bannerImage}
+          alt="Banner"
+          className="w-full h-full object-cover opacity-80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button className="white-glass p-2 rounded-full hover:bg-white/40 transition-colors shadow-sm bg-white/20 backdrop-blur-md">
+            <Share2 className="w-5 h-5 text-gray-700" />
+          </button>
         </div>
       </div>
-      <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Booking Summary</h3>
-        {selectedSlot ? (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-700">Expert</span>
-              <span className="font-semibold">{profile.name}</span>
+
+      {/* Profile Info Section */}
+      <div className="px-6 pb-6 mt-4">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Avatar on Left */}
+          <div className="relative shrink-0 -mt-16 md:-mt-20">
+            <div className="relative inline-block">
+              <img
+                src={profile.avatar || "/mocki_log.png"}
+                alt={profile.name}
+                className="w-24 h-24 md:w-28 md:h-28 rounded-2xl border-4 border-white bg-white object-cover shadow-md"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/mocki_log.png";
+                }}
+              />
+              <div className="absolute bottom-2 right-2 bg-green-500 border-2 border-white w-4 h-4 rounded-full"></div>
             </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-700">Date & Time</span>
-              <span className="font-semibold text-right">
-                {dates[selectedDate].toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}<br />
-                at {selectedSlot.time}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-700">Duration</span>
-              <span className="font-semibold">{profile.availability?.sessionDuration || 60} minutes</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-700">Session Type</span>
-              <span className="font-semibold">{profile.category} Mock Interview</span>
-            </div>
-            <div className="border-t pt-4 mt-2">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total Amount</span>
-                <span className="text-gray-800">{profile.price}</span>
+          </div>
+
+          {/* Details on Right */}
+          <div className="flex-1">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+                    {profile.name}
+                  </h1>
+                  <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <span className="text-sm font-bold text-yellow-800">{profile.rating}</span>
+                  </div>
+                </div>
+
+                <p className="text-lg text-gray-700 font-medium mb-1">
+                  {profile.role}
+                  {profile.company && (
+                    <span className="text-gray-500"> • {profile.company}</span>
+                  )}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 font-medium my-3">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    {profile.location}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="w-4 h-4 text-gray-400" />
+                    {profile.experience} Experience
+                  </span>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(profile.category)}`}>
+                    {profile.category} SPECIALIST
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold border border-green-100 bg-green-50 text-green-700">
+                    VERIFIED EXPERT
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 min-w-[120px] bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                <div className="text-xl font-bold text-[#004fcb]">{profile.price}</div>
+                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">per session</div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // LinkedIn-style Booking Sidebar
+  const BookingCard = () => (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm p-5 space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-gray-900">Select Date & Time</h3>
+        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+      </div>
+
+      {/* Month Header */}
+      <div className="flex flex-col px-1">
+        <h4 className="text-[10px] font-black text-[#004fcb] uppercase tracking-widest mb-0.5">
+          {dates[selectedDate]?.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        </h4>
+        <span className="text-[10px] font-medium text-gray-400">Select your preferred date</span>
+      </div>
+
+      {/* Date Picker - Compact Horizontal with Floating Arrows */}
+      <div className="relative group/carousel px-0">
+        {/* Left Arrow Button */}
+        <button
+          type="button"
+          onClick={() => scrollCarousel('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-30 p-2 rounded-full bg-white shadow-lg text-gray-700 border border-gray-100 opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:translate-x-1 transition-all duration-300 hover:bg-[#004fcb] hover:text-white"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        {/* Right Arrow Button */}
+        <button
+          type="button"
+          onClick={() => scrollCarousel('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-30 p-2 rounded-full bg-white shadow-lg text-gray-700 border border-gray-100 opacity-0 group-hover/carousel:opacity-100 group-hover/carousel:-translate-x-1 transition-all duration-300 hover:bg-[#004fcb] hover:text-white"
+        >
+          <ChevronRight size={16} />
+        </button>
+
+        <div
+          ref={carouselRef}
+          className="flex gap-2.5 overflow-x-auto pb-4 pt-4 px-2 scrollbar-none no-scrollbar snap-x snap-mandatory scroll-smooth"
+        >
+          {dates.map((date, index) => {
+            const isToday = new Date().toDateString() === date.toDateString();
+            const isPast = !isToday && date < new Date() && date.getDate() !== new Date().getDate();
+
+            return (
+              <button
+                key={index}
+                data-active={selectedDate === index}
+                disabled={isPast}
+                onClick={() => {
+                  setSelectedDate(index);
+                  setSelectedSlot(null);
+                }}
+                className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[76px] transition-all border shrink-0 snap-center relative ${selectedDate === index
+                  ? "bg-[#004fcb] border-[#004fcb] text-white shadow-xl ring-4 ring-blue-50 scale-105 z-10"
+                  : isToday
+                    ? "bg-white border-blue-200 text-gray-900 shadow-md ring-2 ring-blue-50"
+                    : isPast
+                      ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-[#004fcb] hover:bg-blue-50/10"
+                  }`}
+              >
+                {isToday && (
+                  <span className={`absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm whitespace-nowrap z-20 ${selectedDate === index ? "bg-white text-[#004fcb]" : "bg-[#004fcb] text-white"
+                    }`}>
+                    ✨ Today
+                  </span>
+                )}
+                <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${selectedDate === index ? "text-blue-100" : "text-gray-400"}`}>
+                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                </span>
+                <span className="text-xl font-black leading-none mb-1">
+                  {date.getDate()}
+                </span>
+                <div className={`w-6 h-0.5 rounded-full mb-1 ${selectedDate === index ? "bg-white/40" : isToday ? "bg-blue-200" : "bg-gray-100"}`}></div>
+                <span className={`text-[9px] font-bold uppercase ${selectedDate === index ? "text-blue-200" : "text-gray-400"}`}>
+                  {date.toLocaleDateString('en-US', { month: 'short' })}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Slots Grid */}
+      <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+        {currentSlots.length > 0 ? (
+          currentSlots.map((slot, index) => (
+            <button
+              key={index}
+              disabled={!slot.available}
+              onClick={() => setSelectedSlot(slot)}
+              className={`py-2.5 px-3 rounded-lg border text-xs font-bold transition-all text-center ${slot.available
+                ? selectedSlot?.time === slot.time
+                  ? "bg-blue-50 border-[#004fcb] text-[#004fcb] ring-1 ring-[#004fcb]"
+                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
+                : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                }`}
+            >
+              {slot.time}
+            </button>
+          ))
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-200" />
-            <p>Please select a time slot to continue</p>
+          <div className="col-span-2 py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No slots available</p>
           </div>
+        )}
+      </div>
+
+      {/* Booking Actions */}
+      <div className="border-t border-gray-100 pt-5">
+        {selectedSlot ? (
+          <div className="mb-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Selected Slot</span>
+              <button onClick={() => setSelectedSlot(null)} className="text-[#004fcb] text-xs font-bold hover:underline">
+                Clear
+              </button>
+            </div>
+            <p className="text-sm font-bold text-gray-900 leading-tight">
+              {dates[selectedDate].toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            </p>
+            <p className="text-[#004fcb] font-bold text-sm mt-1">
+              At {selectedSlot.time}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-center text-gray-400 mb-4 px-4">
+            Select an available time slot above to continue with your booking.
+          </p>
         )}
 
         <button
           onClick={() => setShowPayment(true)}
           disabled={!selectedSlot}
-          className={`w-full py-4 px-6 rounded-xl font-bold text-white transition-all mt-6 flex items-center justify-center gap-2 ${selectedSlot
-            ? "bg-[#004fcb] hover:bg-[#003bb5] shadow-lg hover:shadow-xl hover:scale-105 shadow-blue-200"
-            : "bg-gray-300 cursor-not-allowed"
+          className={`w-full py-3.5 rounded-full font-bold transition-all flex items-center justify-center gap-2 group ${selectedSlot
+            ? "bg-[#004fcb] text-white hover:bg-[#003bb5] shadow-md"
+            : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
         >
-          <CreditCard className="w-5 h-5" />
-          {selectedSlot ? "Proceed to Payment" : "Select Time Slot"}
+          {selectedSlot ? (
+            <>
+              Confirm & Book
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </>
+          ) : (
+            "Select a Slot"
+          )}
         </button>
 
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-4">
-          <Shield className="w-3 h-3 text-green-500" />
-          <span>Secure payment • 24-hour cancellation policy</span>
-        </div>
-      </div>
-      <div className="bg-blue-50/50 rounded-2xl p-6 text-center border border-blue-100/50">
-        <h4 className="font-semibold text-[#002a6b] mb-3">Why Choose Us?</h4>
-        <div className="grid grid-cols-3 gap-4 text-xs">
-          <div>
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm text-[#004fcb]">
-              <CheckCircle className="w-4 h-4" />
-            </div>
-            <span className="text-slate-600">98% Success Rate</span>
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-gray-500">
+            <Shield className="w-3.5 h-3.5 text-green-600" />
+            <span>Secure 256-bit SSL encrypted payment</span>
           </div>
-          <div>
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm text-[#004fcb]">
-              <Users className="w-4 h-4" />
-            </div>
-            <span className="text-slate-600">500+ Experts</span>
-          </div>
-          <div>
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm text-[#004fcb]">
-              <Clock className="w-4 h-4" />
-            </div>
-            <span className="text-slate-600">24/7 Support</span>
+          <div className="flex items-center gap-2 text-[11px] font-medium text-gray-500">
+            <Clock className="w-3.5 h-3.5 text-blue-600" />
+            <span>24-hour cancellation policy applies</span>
           </div>
         </div>
       </div>
     </div>
   );
 
-  // Bottom Navigation for Mobile
-  const BottomNav = () => (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-gray-200 border-t shadow-lg z-20">
-      <div className="grid grid-cols-4 py-3">
-        <button className="flex flex-col items-center text-gray-800" onClick={() => navigate('/')}>
-          <Home size={20} />
-          <span className="text-xs mt-1">Home</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-600">
-          <Search size={20} />
-          <span className="text-xs mt-1">Search</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-600" onClick={() => setShowProfileModal(true)}>
-          <User size={20} />
-          <span className="text-xs mt-1">Profile</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-600">
-          <Settings2 size={20} />
-          <span className="text-xs mt-1">Settings</span>
-        </button>
-      </div>
-
-      {showProfileModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center">
-          <div className="w-full bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto p-6 animate-slideUp">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">Your Profile</h3>
-              <button onClick={() => setShowProfileModal(false)} className="p-2">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                <div className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  JD
-                </div>
-                <div>
-                  <h4 className="font-semibold text-lg">John Doe</h4>
-                  <p className="text-gray-700">john.doe@example.com</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-200 rounded-xl text-center">
-                  <span className="block text-2xl font-bold text-gray-800">5</span>
-                  <span className="text-sm text-gray-700">Sessions</span>
-                </div>
-                <div className="p-4 bg-gray-200 rounded-xl text-center">
-                  <span className="block text-2xl font-bold text-gray-800">4.8</span>
-                  <span className="text-sm text-gray-700">Rating</span>
-                </div>
-              </div>
-              <button className="w-full py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors">
-                Edit Profile Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slideUp { animation: slideUp 0.3s ease-out; }
-      `}</style>
+  const MobileBookingFAB = () => (
+    <div className="lg:hidden fixed bottom-6 right-6 z-40">
+      <button
+        onClick={() => setShowMobileBooking(true)}
+        className="flex items-center gap-2 px-6 py-4 bg-[#004fcb] text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all font-bold"
+      >
+        <Calendar className="w-5 h-5" />
+        Book Now
+      </button>
     </div>
   );
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
+      <div className="min-h-screen bg-[#f3f2ef] pb-10">
         <Navigation />
-        {/* Mobile Booking FAB */}
-        <div className="lg:hidden fixed bottom-20 right-4 z-10">
-          <button
-            onClick={() => setShowMobileBooking(true)}
-            className="p-4 bg-gray-800 text-white rounded-full shadow-lg hover:bg-gray-900 transition-colors"
-          >
-            <Calendar size={24} />
-          </button>
-        </div>
-        {/* Mobile Booking Sheet */}
-        {showMobileBooking && (
-          <div className="lg:hidden fixed inset-0 bg-black/50 z-50 flex items-end">
-            <div className="bg-white w-full rounded-t-3xl max-h-[85vh] overflow-y-auto animate-slideUp">
-              <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center rounded-t-3xl">
-                <h3 className="text-xl font-bold text-gray-800">Book Your Session</h3>
-                <button onClick={() => setShowMobileBooking(false)} className="p-2">
-                  <X size={24} />
-                </button>
-              </div>
-              <div className="p-4">
-                {BookingSidebar()}
-              </div>
-            </div>
-          </div>
-        )}
-        {showPayment && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 shadow-xl w-full max-w-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Dummy Payment Gateway
-              </h3>
-              <p className="text-gray-700 mb-6">
-                Pay <span className="font-semibold text-gray-900">{profile.price}</span> to confirm your booking.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowPayment(false);
-                    showPaymentPage();
-                  }}
-                  className="flex-1 py-2.5 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900"
-                >
-                  Pay Now
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPayment(false);
-                    Swal.fire({
-                      title: "Payment Cancelled",
-                      text: "You cancelled the payment. Slot not booked.",
-                      icon: "info",
-                      confirmButtonColor: "#334155",
-                    });
-                  }}
-                  className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {BookingBanner()}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-8 space-y-8">
-              {PromoBanner()}
-              {/* Coach Profile Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                <div className="flex items-start gap-6">
-                  {/* Profile Image with Status */}
-                  <div className="relative shrink-0">
-                    <div className="relative">
-                      <img
-                        src={profile.logo || profile.avatar || "/mocki_log.png"}
-                        alt={profile.name}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null; // Prevent infinite loop
-                          target.src = "/mocki_log.png";
-                        }}
-                        className="w-24 h-24 rounded-2xl object-cover shadow-md border-2 border-white"
-                      />
 
-                      <div className="absolute -bottom-2 -right-2 bg-green-500 border-2 border-white w-5 h-5 rounded-full"></div>
-                    </div>
-                    <div className="absolute -top-2 -right-2 bg-gray-700 text-white px-2 py-1 rounded-lg text-xs font-medium shadow-sm">
-                      PRO
-                    </div>
-                  </div>
-                  {/* Profile Information */}
-                  <div className="flex-1 min-w-0">
-                    {/* Header Row */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h1 className="text-2xl font-semibold text-gray-900">{profile.name}</h1>
-                          <div className="flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                            <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
-                            <span className="text-sm font-medium text-gray-900">{profile.rating}</span>
-                            <span className="text-sm text-gray-600">({profile.reviews})</span>
-                          </div>
-                        </div>
-                        <p className="text-lg text-gray-700 font-medium">
-                          {profile.role} {profile.company && <span className="text-gray-500">at {profile.company}</span>}
-                        </p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full ${getCategoryColor(profile.category)} text-sm font-medium`}>
-                        {profile.category}
-                      </span>
-                    </div>
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">{totalAvailableSlots}</div>
-                        <div className="text-xs text-gray-500 uppercase tracking-wide">Available Slots</div>
-                      </div>
-                      <div className="text-center border-x border-gray-200">
-                        <div className="text-2xl font-bold text-gray-900">98%</div>
-                        <div className="text-xs text-gray-500 uppercase tracking-wide">Success Rate</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">24h</div>
-                        <div className="text-xs text-gray-500 uppercase tracking-wide">Response</div>
-                      </div>
-                    </div>
-                    {/* Meta Information */}
-                    <div className="flex items-center gap-6 text-sm text-gray-600 mb-6">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span>{profile.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4 text-gray-400" />
-                        <span>{profile.experience}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span>500+ sessions</span>
-                      </div>
-                    </div>
-                    {/* Expertise */}
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900 mb-3">Expertise</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.skills.map(
-                          (
-                            skill: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined,
-                            idx: Key | null | undefined
-                          ) => (
-                            <span
-                              key={idx}
-                              className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-default"
-                            >
-                              {skill}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Details & Reviews Tabs */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="border-b">
-                  <div className="flex">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Main Content Areas */}
+            <div className="lg:col-span-8 space-y-6">
+              {ProfileHeader()}
+
+              {/* Tabs Section - Minimal Layout Shift */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm min-h-[500px]">
+                <div className="border-b border-gray-200">
+                  <div className="flex px-4">
                     <button
                       onClick={() => setActiveTab("details")}
-                      className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "details"
-                        ? "border-[#004fcb] text-[#004fcb] bg-blue-50"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
+                      className={`px-6 py-4 font-bold text-sm transition-all relative ${activeTab === "details"
+                        ? "text-[#004fcb] after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#004fcb]"
+                        : "text-gray-500 hover:bg-gray-50"
                         }`}
                     >
-                      Session Details
+                      About Session
                     </button>
                     <button
                       onClick={() => setActiveTab("reviews")}
-                      className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "reviews"
-                        ? "border-[#004fcb] text-[#004fcb] bg-blue-50"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
+                      className={`px-6 py-4 font-bold text-sm transition-all relative ${activeTab === "reviews"
+                        ? "text-[#004fcb] after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#004fcb]"
+                        : "text-gray-500 hover:bg-gray-50"
                         }`}
                     >
                       Reviews & Ratings ({reviews.length})
                     </button>
                   </div>
                 </div>
-                <div className="p-8">
+
+                <div className="p-6 md:p-8">
                   {activeTab === "details" ? (
-                    <div className="space-y-8">
-                      {/* Session Overview */}
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-                          <Award className="w-6 h-6 text-gray-600" />
-                          Mock Interview Session Overview
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-50">
-                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
-                              <Clock className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">{profile.availability?.sessionDuration || 60} Minutes</div>
-                              <div className="text-sm text-slate-500">Session Duration</div>
-                            </div>
+                    <div className="space-y-10 animate-fadeIn">
+                      {/* Session Quick Stats */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex items-center gap-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
+                            <Timer className="w-6 h-6" />
                           </div>
-                          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-50">
-                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
-                              <Video className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">Video Call</div>
-                              <div className="text-sm text-slate-500">Session Format</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-50">
-                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
-                              <BookOpen className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">Personalized</div>
-                              <div className="text-sm text-slate-500">Tailored Questions</div>
-                            </div>
+                          <div>
+                            <div className="font-bold text-gray-900">{profile.availability?.sessionDuration || 60}m</div>
+                            <div className="text-xs text-gray-500 font-medium">Session duration</div>
                           </div>
                         </div>
-                        {/* Session Process */}
-                        <div className="space-y-6">
-                          <h4 className="text-xl font-bold text-gray-800">Session Structure</h4>
+                        <div className="flex items-center gap-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
+                            <Video className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-900">1:1 Video</div>
+                            <div className="text-xs text-gray-500 font-medium">Live interaction</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#004fcb]">
+                            <CheckCircle className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-900">Customized</div>
+                            <div className="text-xs text-gray-500 font-medium">Tailored plan</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expertise Tags */}
+                      <div>
+                        <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <Award className="w-5 h-5 text-gray-400" />
+                          Areas of Expertise
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.skills.map((skill, idx) => (
+                            <span key={idx} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-bold hover:border-[#004fcb] transition-colors cursor-default">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Session Structure */}
+                      <div className="space-y-6">
+                        <h4 className="text-lg font-bold text-gray-900">How the session works</h4>
+                        <div className="space-y-4 relative before:content-[''] before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-100">
                           {[
-                            {
-                              step: "1",
-                              title: "Introduction & Goal Setting",
-                              description:
-                                "Discuss your background, target role, and specific areas you want to focus on during the session.",
-                            },
-                            {
-                              step: "2",
-                              title: "Technical/Behavioral Questions",
-                              description:
-                                "Industry-relevant questions tailored to your experience level and target position.",
-                            },
-                            {
-                              step: "3",
-                              title: "Real-world Scenario",
-                              description:
-                                "Practical problem-solving exercise to demonstrate your skills and approach.",
-                            },
-                            {
-                              step: "4",
-                              title: "Detailed Feedback Session",
-                              description:
-                                "Comprehensive analysis of your performance with actionable improvement suggestions.",
-                            },
-                          ].map((item, index) => (
-                            <div key={index} className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                              <div className="w-8 h-8 bg-[#004fcb] text-white rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
-                                {item.step}
+                            { title: "Prep & Intro", desc: "Briefly align on your goals and target role." },
+                            { title: "Realistic Mock", desc: "Live interview with professional-grade questions." },
+                            { title: "Deep Dive Feedback", desc: "Comprehensive breakdown of your performance." },
+                            { title: "Next Steps", desc: "Actionable roadmap and follow-up resources." }
+                          ].map((step, idx) => (
+                            <div key={idx} className="flex gap-4 relative">
+                              <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center text-xs font-bold z-10 shrink-0">
+                                {idx + 1}
                               </div>
-                              <div>
-                                <h5 className="font-semibold text-slate-800 mb-2">{item.title}</h5>
-                                <p className="text-slate-600">{item.description}</p>
+                              <div className="pb-4">
+                                <h5 className="font-bold text-gray-900 text-sm mb-1">{step.title}</h5>
+                                <p className="text-sm text-gray-600 leading-relaxed">{step.desc}</p>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
-                      {/* Benefits */}
-                      <div>
-                        <h4 className="text-xl font-bold text-gray-800 mb-6">What You'll Receive</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                      {/* Benefits Checklist */}
+                      <div className="bg-[#004fcb]/5 p-6 rounded-xl border border-[#004fcb]/10">
+                        <h4 className="text-sm font-bold text-[#002a6b] uppercase tracking-wider mb-4">Included in every session</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
                           {[
-                            "Detailed performance assessment report",
-                            "Personalized improvement plan",
-                            "Session recording with timestamped feedback",
-                            "Industry-specific interview questions",
-                            "Communication skills evaluation",
-                            "Follow-up resources and preparation materials",
-                          ].map((benefit, idx) => (
-                            <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                              <CheckCircle className="w-5 h-5 text-gray-700 shrink-0" />
-                              <span className="text-gray-700">{benefit}</span>
+                            "Performance scorecard",
+                            "Actionable improvement plan",
+                            "Curated question bank",
+                            "Session recording",
+                            "Resume review tips",
+                            "Follow-up email support"
+                          ].map((b, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <Check className="w-4 h-4 text-green-600 font-bold" />
+                              <span className="text-sm font-medium text-gray-700">{b}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-8">
-                      {/* Rating Summary */}
-                      <div className="bg-gray-50 rounded-2xl p-6">
-                        <div className="flex flex-col md:flex-row items-center justify-between">
-                          <div className="text-center md:text-left mb-4 md:mb-0">
-                            <div className="text-5xl font-bold text-gray-800 mb-2">{profile.rating}</div>
-                            <div className="flex items-center justify-center md:justify-start gap-1 mb-2">
+                    <div className="space-y-8 animate-fadeIn">
+                      {/* Rating Summary Card */}
+                      <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                        <div className="flex flex-col md:flex-row items-center gap-8">
+                          <div className="text-center md:border-r border-gray-200 pr-0 md:pr-10">
+                            <div className="text-6xl font-bold text-gray-900 mb-1">{profile.rating}</div>
+                            <div className="flex items-center justify-center gap-1 mb-2">
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
@@ -920,75 +748,77 @@ const BookSessionPage = () => {
                                 />
                               ))}
                             </div>
-                            <div className="text-gray-600">Based on {profile.reviews} reviews</div>
+                            <div className="text-sm font-medium text-gray-500">{profile.reviews} total reviews</div>
                           </div>
-                          <div className="space-y-2">
+
+                          <div className="flex-1 w-full space-y-2">
                             {[5, 4, 3, 2, 1].map((star) => (
-                              <div key={star} className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600 w-4">{star}</span>
-                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div key={star} className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-gray-600 w-3">{star}</span>
+                                <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
                                   <div
-                                    className="bg-yellow-500 h-2 rounded-full"
+                                    className="bg-yellow-500 h-full rounded-full transition-all duration-1000"
                                     style={{
-                                      width: `${(star === 5 ? 70 : star === 4 ? 20 : star === 3 ? 8 : star === 2 ? 2 : 0)}%`
+                                      width: `${star === 5 ? (profile.rating > 4.5 ? 85 : 70) : star === 4 ? 20 : 5}%`
                                     }}
                                   />
                                 </div>
+                                <span className="text-xs font-medium text-gray-400 w-8">
+                                  {star === 5 ? '85%' : star === 4 ? '12%' : '1%'}
+                                </span>
                               </div>
                             ))}
                           </div>
                         </div>
                       </div>
+
                       {/* Reviews List */}
                       <div className="space-y-6">
                         {reviewsLoading ? (
-                          <div className="text-center py-10">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                            <p className="text-gray-500 mt-2">Loading reviews...</p>
+                          <div className="py-20 text-center">
+                            <div className="w-10 h-10 border-4 border-[#004fcb]/20 border-t-[#004fcb] rounded-full animate-spin mx-auto mb-4"></div>
+                            <p className="text-sm font-medium text-gray-500">Curating client feedback...</p>
                           </div>
                         ) : reviews.length > 0 ? (
-                          reviews.map(review => (
-                            <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
+                          reviews.map((review) => (
+                            <div key={review.id} className="p-6 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
                               <div className="flex items-start gap-4">
-                                {review.avatar ? (
-                                  <img src={review.avatar} alt={review.name} className="w-12 h-12 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                                    {review.name.charAt(0)}
-                                  </div>
-                                )}
+                                <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center text-gray-400 font-bold">
+                                  {review.avatar ? (
+                                    <img src={review.avatar} alt={review.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    review.name.charAt(0)
+                                  )}
+                                </div>
                                 <div className="flex-1">
-                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
                                     <div>
-                                      <h4 className="font-semibold text-gray-800">{review.name}</h4>
-                                      <p className="text-gray-600 text-sm">{review.role}</p>
+                                      <h5 className="font-bold text-gray-900">{review.name}</h5>
+                                      <p className="text-xs text-gray-500 font-medium">{review.role}</p>
                                     </div>
-                                    <span className="text-sm text-gray-500 mt-1 sm:mt-0">{review.date}</span>
+                                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1 sm:mt-0">
+                                      {review.date}
+                                    </span>
                                   </div>
-                                  <div className="flex items-center gap-1 mb-3">
+                                  <div className="flex items-center gap-0.5 mb-3">
                                     {[...Array(5)].map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
-                                      />
+                                      <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-yellow-500 fill-current' : 'text-gray-200'}`} />
                                     ))}
                                   </div>
-                                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                                  <p className="text-sm text-gray-700 leading-relaxed italic">"{review.comment}"</p>
 
                                   {review.strengths && review.strengths.length > 0 && (
-                                    <div className="mt-3">
-                                      <p className="text-xs font-semibold text-green-600">Strengths:</p>
-                                      <div className="flex flex-wrap gap-1 mt-1">
-                                        {review.strengths.map((s, idx) => (
-                                          <span key={idx} className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100">{s}</span>
-                                        ))}
-                                      </div>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                      {review.strengths.map((s, idx) => (
+                                        <span key={idx} className="text-[10px] bg-green-50 text-green-700 px-2 py-1 rounded font-bold border border-green-100 uppercase tracking-tighter">
+                                          {s}
+                                        </span>
+                                      ))}
                                     </div>
                                   )}
 
-                                  <div className="flex items-center gap-4 mt-4">
-                                    <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                                  <div className="flex items-center gap-6 mt-5 border-t border-gray-50 pt-3">
+                                    <button className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-[#004fcb] transition-colors">
                                       <ThumbsUp className="w-4 h-4" />
                                       Helpful
                                     </button>
@@ -998,10 +828,12 @@ const BookSessionPage = () => {
                             </div>
                           ))
                         ) : (
-                          <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <h4 className="text-lg font-medium text-gray-600">No reviews yet</h4>
-                            <p className="text-gray-500">Be the first to review this expert after your session!</p>
+                          <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                              <MessageCircle className="w-8 h-8 text-gray-300" />
+                            </div>
+                            <h4 className="text-base font-bold text-gray-800">No reviews yet</h4>
+                            <p className="text-sm text-gray-500 mt-1 max-w-xs mx-auto">Be the first to share your experience after completing a session.</p>
                           </div>
                         )}
                       </div>
@@ -1010,17 +842,142 @@ const BookSessionPage = () => {
                 </div>
               </div>
             </div>
-            {/* Sidebar - Booking Section */}
-            <div className="hidden lg:block lg:col-span-4">
-              <div className="sticky top-24">
-                {BookingSidebar()}
+
+            {/* Sidebar Columns */}
+            <div className="hidden lg:block lg:col-span-4 h-fit sticky top-[80px]">
+              <div className="space-y-6">
+                {BookingCard()}
+
+                {/* Proof Card */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                  <h4 className="text-sm font-bold text-gray-900 mb-4 px-1">Why learn from {profile.name.split(' ')[0]}?</h4>
+                  <div className="space-y-4">
+                    <div className="flex gap-4">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                        <Users className="w-4 h-4 text-[#004fcb]" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">Trusted Guidance</p>
+                        <p className="text-[11px] text-gray-500">500+ professionals successfully coached this year.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
+                        <Zap className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">Fast Response</p>
+                        <p className="text-[11px] text-gray-500">Typically responds to booking requests within {profile.responseTime}.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        {BottomNav()}
+
+        {MobileBookingFAB()}
+
+        {/* Mobile Booking Sheet */}
+        {showMobileBooking && (
+          <div className="lg:hidden fixed inset-0 bg-black/60 z-[60] flex items-end animate-fadeIn">
+            <div className="bg-white w-full rounded-t-[32px] max-h-[85vh] overflow-y-auto animate-slideUp relative pb-10">
+              <div className="sticky top-0 bg-white/80 backdrop-blur-md items-center border-b border-gray-100 p-6 flex justify-between z-10">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Book Session</h3>
+                  <p className="text-xs text-gray-500 font-medium">with {profile.name}</p>
+                </div>
+                <button onClick={() => setShowMobileBooking(false)} className="p-2 bg-gray-50 rounded-full text-gray-500">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-6">
+                {BookingCard()}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dummy Payment Modal */}
+        {showPayment && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fadeIn">
+            <div className="bg-white rounded-[24px] p-8 shadow-2xl w-full max-w-sm border border-gray-100 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-[#004fcb]"></div>
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                <CreditCard className="w-8 h-8 text-[#004fcb]" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Checkout Summary
+              </h3>
+              <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+                Review your session details before making the payment. Secure gateway powered by Stripe.
+              </p>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-8 border border-gray-100">
+                <div className="flex justify-between text-sm py-1">
+                  <span className="text-gray-500 font-medium">Session Fee</span>
+                  <span className="text-gray-900 font-bold">{profile.price}</span>
+                </div>
+                <div className="flex justify-between text-sm py-1">
+                  <span className="text-gray-500 font-medium">Service Tax</span>
+                  <span className="text-gray-900 font-bold">₹0</span>
+                </div>
+                <div className="h-px bg-gray-200 my-2"></div>
+                <div className="flex justify-between text-base py-1">
+                  <span className="text-gray-900 font-bold">Total Amount</span>
+                  <span className="text-[#004fcb] font-black">{profile.price}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPayment(false);
+                    showPaymentPage();
+                  }}
+                  className="flex-1 py-4 bg-[#004fcb] text-white rounded-xl font-bold hover:bg-[#003bb5] transition-all shadow-md active:scale-95"
+                >
+                  Confirm Pay
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPayment(false);
+                    Swal.fire({
+                      title: "Payment Cancelled",
+                      text: "The checkout process was aborted. Your session is not booked.",
+                      icon: "info",
+                      iconColor: "#004fcb",
+                      confirmButtonColor: "#004fcb",
+                    });
+                  }}
+                  className="px-6 py-4 bg-gray-100 text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
       <Footer />
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-slideUp { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .white-glass { background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); }
+      `}</style>
     </>
   );
 };
