@@ -17,6 +17,8 @@ import userProfileRoutes from "./routes/userProfileRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+
 
 await connectDB();
 // Seeding on startup
@@ -67,6 +69,8 @@ app.use("/api/user", userProfileRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/payment", paymentRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 
