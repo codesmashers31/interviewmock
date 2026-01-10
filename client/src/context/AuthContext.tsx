@@ -9,6 +9,14 @@ export interface User {
   userType: string;
   name?: string;
   profileImage?: string;
+  phone?: string;
+  personalInfo?: {
+    phone?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    bio?: string;
+  };
 }
 
 interface AuthContextType {
@@ -113,9 +121,10 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
       const userData: User = response.data.user;
 
       // Normalize userId or _id to id for consistency
-      const normalizedUser = {
+      const normalizedUser: User = {
         ...userData,
         id: userData.userId || (userData as any)._id || userData.id,
+        phone: userData.personalInfo?.phone || (userData as any).phone || userData.phone,
       };
 
       setUser(normalizedUser);
@@ -136,9 +145,10 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
       setToken(accessToken);
 
       // Normalize userId to id for consistency
-      const normalizedUser = {
+      const normalizedUser: User = {
         ...userData,
         id: userData.userId || userData.id,
+        phone: (userData as any).personalInfo?.phone || (userData as any).phone || userData.phone,
       };
 
       setUser(normalizedUser);

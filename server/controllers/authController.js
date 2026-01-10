@@ -237,7 +237,9 @@ export const loginUser = async (req, res) => {
         email: user.email,
         userType: user.userType,
         name: user.name,
-        userId: user._id
+        userId: user._id,
+        personalInfo: user.personalInfo,
+        profileImage: user.profileImage
       }
     });
   } catch (error) {
