@@ -5,25 +5,11 @@ import { Card, MultiSelect, PrimaryButton } from "../pages/ExpertDashboard";
 import { useAuth } from "../context/AuthContext";
 
 const SkillsAndExpertise = () => {
-  // const user = "69255389e1a38f2afd8f663d"; // Replace with dynamic userId
   const { user } = useAuth();
 
-  const DOMAIN_OPTIONS = [
-    { value: "recruiting", label: "Recruiting" },
-    { value: "talent-acquisition", label: "Talent Acquisition" },
-    { value: "technical-interviewing", label: "Technical Interviewing" },
-    { value: "hr-rounds", label: "HR Rounds" },
-    { value: "leadership-assessment", label: "Leadership Assessment" },
-    { value: "behavioral-interviewing", label: "Behavioral Interviewing" },
-    { value: "product-management", label: "Product Management" },
-    { value: "software-development", label: "Software Development" },
-    { value: "data-science", label: "Data Science" },
-    { value: "ux-design", label: "UX Design" },
-    { value: "digital-marketing", label: "Digital Marketing" },
-    { value: "sales", label: "Sales" },
-    { value: "finance", label: "Finance" },
-    { value: "operations", label: "Operations" },
-  ];
+  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
+
+  // DOMAIN_OPTIONS removed in favor of dynamic categoryOptions
 
   const TOOL_OPTIONS = [
     { value: "workday", label: "Workday" },
@@ -68,21 +54,32 @@ const SkillsAndExpertise = () => {
 
   // ------------------ Fetch existing (GET) ------------------
   useEffect(() => {
-    const fetchSkills = async () => {
+    const fetchData = async () => {
       try {
         // Fetch skills
         const skillsRes = await axios.get("/api/expert/skills");
-
         setProfile((p) => ({
           ...p,
           skills: skillsRes.data?.data || { mode: "", domains: [], tools: [], languages: [] },
         }));
+
+        // Fetch Categories
+        const catRes = await axios.get("/api/categories");
+        if (Array.isArray(catRes.data)) {
+          console.log("Categories fetched:", catRes.data);
+          const options = catRes.data.map((cat: any) => ({
+            value: cat.name,
+            label: `${cat.name} - ₹${cat.amount}`
+          }));
+          setCategoryOptions(options);
+        }
+
       } catch (err: any) {
-        console.error(err);
+        console.error("Error fetching data:", err);
       }
     };
 
-    fetchSkills();
+    fetchData();
   }, []);
 
   // ------------------ Array updater ------------------
@@ -147,13 +144,14 @@ const SkillsAndExpertise = () => {
           </select>
         </div>
 
-        {/* Domains */}
+        {/* Domains / Categories */}
         <div className="md:col-span-2">
           <MultiSelect
-            label="Domains / Skill Sets"
+            label="Category *"
             value={profile.skills.domains}
             onChange={(values) => updateSkillsArray("domains", values)}
-            options={DOMAIN_OPTIONS}
+            options={categoryOptions}
+            placeholder="Select Categories..."
           />
         </div>
 

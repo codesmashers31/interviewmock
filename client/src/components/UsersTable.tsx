@@ -1,30 +1,53 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 
-const initialUsers = [
-  { id: 101, name: "Arun Kumar", email: "arun@gmail.com", status: "Active", joined: "2024-10-12", sessions: 12 },
-  { id: 102, name: "Sneha R", email: "sneha@yahoo.com", status: "Blocked", joined: "2023-03-21", sessions: 3 },
-  { id: 103, name: "Vikram", email: "vikram@gmail.com", status: "Active", joined: "2024-02-14", sessions: 19 },
-  { id: 104, name: "Priya Sharma", email: "priya@outlook.com", status: "Active", joined: "2024-11-05", sessions: 7 },
-  { id: 105, name: "Rahul Mehta", email: "rahul@gmail.com", status: "Blocked", joined: "2023-12-18", sessions: 0 },
-  { id: 106, name: "Kavita Joshi", email: "kavita@mail.com", status: "Active", joined: "2024-08-02", sessions: 4 },
-  { id: 107, name: "Manish Patel", email: "manish@mail.com", status: "Active", joined: "2024-01-20", sessions: 9 },
-  { id: 108, name: "Neha Singh", email: "neha@mail.com", status: "Blocked", joined: "2023-06-15", sessions: 2 },
-];
+// Use hardcoded URL to ensure correct port given environment issues
+const API_URL = "http://localhost:3000/api";
 
 const UsersTable = () => {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortField, setSortField] = useState(null);
-  const [sortOrder, setSortOrder] = useState("desc");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-  const toggleStatus = (id) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, status: u.status === "Active" ? "Blocked" : "Active" } : u
-      )
-    );
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_URL}/admin/users`);
+      if (res.data.success) {
+        setUsers(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Failed to fetch users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const toggleStatus = async (id: string, currentStatus: string) => {
+    try {
+      const res = await axios.put(`${API_URL}/admin/users/${id}/status`);
+      if (res.data.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === id ? { ...u, status: res.data.data.status } : u
+          )
+        );
+        toast.success(res.data.message);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    }
   };
 
   // Filtering by search
@@ -33,8 +56,8 @@ const UsersTable = () => {
     if (!q) return users;
     return users.filter(
       (u) =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q))
     );
   }, [users, search]);
 
@@ -43,15 +66,21 @@ const UsersTable = () => {
     if (!sortField) return filtered;
     const arr = [...filtered];
     arr.sort((a, b) => {
+      // Handle sessions sorting if it exists, else default to 0
       if (sortField === "sessions") {
-        return sortOrder === "asc" ? a.sessions - b.sessions : b.sessions - a.sessions;
+        const sA = a.sessions || 0;
+        const sB = b.sessions || 0;
+        return sortOrder === "asc" ? sA - sB : sB - sA;
       }
       if (sortField === "joined") {
-        const da = new Date(a.joined).getTime();
-        const db = new Date(b.joined).getTime();
+        const da = new Date(a.createdAt || a.joined).getTime();
+        const db = new Date(b.createdAt || b.joined).getTime();
         return sortOrder === "asc" ? da - db : db - da;
       }
-      return 0;
+      // Add other sort fields if needed, default string compare
+      const valA = String(a[sortField] || "");
+      const valB = String(b[sortField] || "");
+      return sortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
     return arr;
   }, [filtered, sortField, sortOrder]);
@@ -61,12 +90,13 @@ const UsersTable = () => {
     totalUsers: users.length,
     activeUsers: users.filter(u => u.status === "Active").length,
     blockedUsers: users.filter(u => u.status === "Blocked").length,
-    totalSessions: users.reduce((sum, u) => sum + u.sessions, 0),
+    totalSessions: users.reduce((sum, u) => sum + (u.sessions || 0), 0),
   }), [users]);
 
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  React.useEffect(() => {
+
+  useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
 
@@ -76,7 +106,7 @@ const UsersTable = () => {
   }, [sorted, page, pageSize]);
 
   // Header click handler for sorting
-  const handleSort = (field) => {
+  const handleSort = (field: string) => {
     if (sortField === field) {
       setSortOrder((o) => (o === "desc" ? "asc" : "desc"));
     } else {
@@ -87,7 +117,7 @@ const UsersTable = () => {
   };
 
   // Render sort arrow
-  const SortArrow = ({ field }) => {
+  const SortArrow = ({ field }: { field: string }) => {
     if (sortField !== field) {
       return <span className="ml-1 opacity-30">▼</span>;
     }
@@ -102,17 +132,17 @@ const UsersTable = () => {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       let start = Math.max(1, page - 2);
       let end = Math.min(totalPages, start + maxVisible - 1);
-      
+
       if (end - start + 1 < maxVisible) {
         start = end - maxVisible + 1;
       }
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
@@ -264,14 +294,20 @@ const UsersTable = () => {
               </thead>
 
               <tbody>
-                {pageData.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors group">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 px-6 text-center text-gray-500">
+                      Loading users...
+                    </td>
+                  </tr>
+                ) : pageData.map((u) => (
+                  <tr key={u._id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors group">
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-        
+
                         <div>
                           <p className="font-semibold text-gray-900">{u.name}</p>
-                          <p className="text-xs text-gray-500">ID: {u.id}</p>
+                          <p className="text-xs text-gray-500">ID: {u._id.substring(0, 8)}...</p>
                         </div>
                       </div>
                     </td>
@@ -279,36 +315,34 @@ const UsersTable = () => {
                       <div className="text-gray-700">{u.email}</div>
                     </td>
                     <td className="py-4 px-6">
-                      
-                          {u.sessions}
+
+                      {u.sessions || 0}
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2 text-gray-700">
                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        {u.joined}
+                        {new Date(u.createdAt).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-medium ${
-                        u.status === "Active" 
-                          ? " text-green-700 " 
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-medium ${u.status === "Active"
+                          ? " text-green-700 "
                           : " text-red-700 "
-                      }`}>
-                        
+                        }`}>
+                        <span className={`w-2 h-2 rounded-full ${u.status === "Active" ? "bg-green-500" : "bg-red-500"}`} />
                         {u.status}
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => toggleStatus(u.id)}
-                          className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                            u.status === "Active" 
-                              ? " bg-red-100 text-red-700 hover:from-red-100 hover:to-red-200" 
+                          onClick={() => toggleStatus(u._id, u.status)}
+                          className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${u.status === "Active"
+                              ? " bg-red-100 text-red-700 hover:from-red-100 hover:to-red-200"
                               : "bg-green-100 text-green-700 hover:from-green-100 hover:to-green-200"
-                          }`}
+                            }`}
                         >
                           {u.status === "Active" ? "Block" : "Unblock"}
                         </button>
@@ -317,7 +351,7 @@ const UsersTable = () => {
                   </tr>
                 ))}
 
-                {pageData.length === 0 && (
+                {!loading && pageData.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-12 px-6 text-center">
                       <div className="max-w-md mx-auto">
@@ -349,11 +383,10 @@ const UsersTable = () => {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                    page === 1 
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                  className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${page === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm"
-                  }`}
+                    }`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -366,11 +399,10 @@ const UsersTable = () => {
                     <button
                       key={p}
                       onClick={() => setPage(p)}
-                      className={`min-w-10 h-10 rounded-xl font-medium transition-all ${
-                        p === page 
-                          ? "bg-linear-to-r from-blue-600 to-blue-700 text-white shadow-lg" 
+                      className={`min-w-10 h-10 rounded-xl font-medium transition-all ${p === page
+                          ? "bg-linear-to-r from-blue-600 to-blue-700 text-white shadow-lg"
                           : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {p}
                     </button>
@@ -391,11 +423,10 @@ const UsersTable = () => {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                    page === totalPages 
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                  className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${page === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm"
-                  }`}
+                    }`}
                 >
                   Next
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

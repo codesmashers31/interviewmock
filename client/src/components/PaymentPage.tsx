@@ -131,6 +131,23 @@ const PaymentPage: React.FC = () => {
   const handleInitiatePayment = async () => {
     setIsProcessing(true);
     try {
+      // --- SIMULATION MODE START ---
+      // Bypass Razorpay for now as requested
+      const dummyResponse = {
+        razorpay_order_id: `dummy_order_${Date.now()}`,
+        razorpay_payment_id: `dummy_pay_${Date.now()}`,
+        razorpay_signature: `dummy_sig_${Date.now()}`
+      };
+
+      // Simulate network delay for realism
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      await handlePaymentSuccess(dummyResponse);
+      return;
+      // --- SIMULATION MODE END ---
+
+      /* 
+      // Original Razorpay Logic (Commented out)
       const res = await loadRazorpayScript();
       if (!res) throw new Error("Razorpay SDK failed to load.");
 
@@ -162,6 +179,7 @@ const PaymentPage: React.FC = () => {
 
       const rzp = new window.Razorpay(options);
       rzp.open();
+      */
     } catch (err: any) {
       console.error("Payment Initiation Error:", err);
       setPaymentStatus("error");

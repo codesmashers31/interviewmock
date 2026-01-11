@@ -18,7 +18,11 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import userAdminRoutes from './routes/userAdminRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
+
+import categoryRoutes from "./routes/categoryRoutes.js";
 
 await connectDB();
 // Seeding on startup
@@ -58,6 +62,11 @@ attachSignaling(io);
 // Middleware
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
+
 // serve uploaded images (dev)
 app.use("/uploads/profileImages", express.static(path.join(process.cwd(), "uploads/profileImages")));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
@@ -68,8 +77,10 @@ app.use("/api/expert", expertRoutes);
 app.use("/api/user", userProfileRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/payment", paymentRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/admin/users', userAdminRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/payment', paymentRoutes);
 
 
 const PORT = process.env.PORT || 5000;

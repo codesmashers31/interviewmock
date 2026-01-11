@@ -25,7 +25,8 @@ import {
   getRejectedExperts,
   approveExpert,
   rejectExpert,
-  resubmitProfile
+  resubmitProfile,
+  getExpertStats
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
@@ -47,6 +48,7 @@ router.use(authenticateToken);
 
 // Profile
 router.get("/profile", getExpertProfile);
+router.get("/stats", getExpertStats);
 router.get("/admin/profile/:id", getExpertById);
 router.post("/profile/photo", uploadProfile.single("photo"), uploadProfilePhoto);
 router.get("/profile/image", getExpertProfileImage);

@@ -43,6 +43,14 @@ export const verifyPayment = async (req, res) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
+        // Bypass for dummy simulation
+        if (razorpay_payment_id.startsWith('dummy_')) {
+            return res.status(200).json({
+                success: true,
+                message: 'Payment verified successfully (Simulation)',
+            });
+        }
+
         const sign = razorpay_order_id + '|' + razorpay_payment_id;
         const expectedSign = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret')

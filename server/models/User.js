@@ -45,6 +45,12 @@ const userSchema = new mongoose.Schema({
     trim: true
   },
 
+  status: {
+    type: String,
+    enum: ['Active', 'Blocked'],
+    default: 'Active'
+  },
+
   /* ----------------- Profile Fields ------------------ */
   profileImage: {
     type: String,

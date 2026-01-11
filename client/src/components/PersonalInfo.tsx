@@ -10,15 +10,7 @@ const PersonalInfo = () => {
 
 
 
-    const CATEGORY_OPTIONS = [
-        { value: "IT", label: "IT / Technology" },
-        { value: "HR", label: "HR & Recruiting" },
-        { value: "Business", label: "Business" },
-        { value: "Design", label: "Design" },
-        { value: "Marketing", label: "Marketing" },
-        { value: "Finance", label: "Finance" },
-        { value: "AI", label: "AI / Machine Learning" },
-    ];
+    const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
 
     const initialProfile = {
         personal: {
@@ -40,14 +32,13 @@ const PersonalInfo = () => {
 
     // -------------------- GET personal info --------------------
     useEffect(() => {
-        const fetchPersonalInfo = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch Personal Info
                 const response = await axios.get(`/api/expert/personalinfo`);
 
                 if (response.data.success && response.data.data) {
                     const data = response.data.data;
-
-
                     setProfile({
                         personal: {
                             name: data.userName || user?.name || "",
@@ -69,14 +60,25 @@ const PersonalInfo = () => {
                         }
                     }));
                 }
+
+                // Fetch Categories
+                const catRes = await axios.get("/api/categories");
+                if (Array.isArray(catRes.data)) {
+                    const options = catRes.data.map((cat: any) => ({
+                        value: cat.name,
+                        label: `${cat.name} - ₹${cat.amount}`
+                    }));
+                    setCategoryOptions(options);
+                }
+
             } catch (err: any) {
-                console.error("Failed to fetch personal info:", err);
+                console.error("Failed to fetch data:", err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchPersonalInfo();
+        fetchData();
     }, [user]);
 
     // -------------------- Save (PUT / upsert) --------------------
@@ -200,7 +202,7 @@ const PersonalInfo = () => {
                             disabled={!!profile.personal?.category}
                         >
                             <option value="">Select category (one-time selection)</option>
-                            {CATEGORY_OPTIONS.map((cat) => (
+                            {categoryOptions.map((cat) => (
                                 <option key={cat.value} value={cat.value}>
                                     {cat.label}
                                 </option>

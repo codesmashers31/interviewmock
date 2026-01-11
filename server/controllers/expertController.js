@@ -4,6 +4,8 @@ import fs from "fs";
 import multer from "multer";
 import mongoose from "mongoose";
 import ExpertDetails from "../models/expertModel.js"; // adjust if file name differs
+import Session from "../models/Session.js";
+import Review from "../models/reviewModel.js";
 import { getFileUrl } from "../middleware/upload.js";
 
 /* -------------------- Helpers -------------------- */
@@ -667,7 +669,89 @@ export const updateSkillsAndExpertise = async (req, res) => {
   }
 };
 
-/* -------------------- getAvailability / updateAvailability / delete helpers -------------------- */
+/* -------------------- getExpertStats -------------------- */
+export const getExpertStats = async (req, res) => {
+  try {
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized" });
+    const queryUserId = toObjectId(userIdRaw);
+
+    // Get expertId (string based on schema)
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success: false, message: "Expert not found" });
+
+    // Use expert userId as expertId string for sessions (based on current implementation pattern)
+    // Or if session uses expert._id, check that. 
+    // Session schema says expertId: String. Usually it's the User._id string.
+    const expertId = String(queryUserId);
+
+    console.log("DEBUG: getExpertStats for expertId (User ID):", expertId);
+
+    const now = new Date();
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+
+    // DEBUG: Check what sessions exist for this expert
+    const allSessions = await import("../models/Session.js").then(m => m.default.find({ expertId }));
+    console.log("DEBUG: Found sessions for expert:", allSessions);
+    console.log("DEBUG: Current Time:", now);
+
+    const [
+      totalSessions,
+      upcomingSessions,
+      todaysBookings,
+      completedSessions,
+      ratings
+    ] = await Promise.all([
+      // Total
+      import("../models/Session.js").then(m => m.default.countDocuments({ expertId })),
+      // Upcoming (confirmed & future)
+      import("../models/Session.js").then(m => m.default.countDocuments({ expertId, status: 'confirmed', startTime: { $gt: now } })),
+      // Today (confirmed & today)
+      import("../models/Session.js").then(m => m.default.countDocuments({
+        expertId,
+        status: 'confirmed',
+        startTime: { $gte: startOfDay, $lte: endOfDay }
+      })),
+      // Completed for revenue
+      import("../models/Session.js").then(m => m.default.find({ expertId, status: 'completed' }, 'price')),
+      // Ratings
+      import("../models/reviewModel.js").then(m => m.default.find({ expertId, reviewerRole: 'candidate' }, 'overallRating')) // Ratings GIVEN to expert
+    ]);
+
+    // Calculate revenue
+    const revenue = completedSessions.reduce((sum, s) => sum + (s.price || 0), 0);
+
+    // Calculate avg rating
+    let avgRating = 0;
+    if (ratings.length > 0) {
+      const sumRating = ratings.reduce((sum, r) => sum + r.overallRating, 0);
+      avgRating = Number((sumRating / ratings.length).toFixed(1));
+    }
+
+    // Session completion rate (completed / total created)
+    // Simplification: if total is 0, 100%
+    const completionRate = totalSessions > 0
+      ? Math.round((completedSessions.length / totalSessions) * 100)
+      : 0;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalSessions,
+        upcomingSessions,
+        todaysBookings,
+        revenue,
+        rating: avgRating,
+        completionRate
+      }
+    });
+
+  } catch (err) {
+    console.error("getExpertStats error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 export const getAvailability = async (req, res) => {
   try {
     const userIdRaw = resolveUserIdFromReq(req);
