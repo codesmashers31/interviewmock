@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from '../lib/axios';
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, RefreshCw, Eye, FileText } from "lucide-react";
 
 interface PersonalInformation {
   userName: string;
@@ -65,20 +65,22 @@ const VerifiedExpertsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  useEffect(() => {
-    const fetchVerifiedExperts = async () => {
-      try {
-        const response = await axios.get("/api/expert/verified");
-        if (response.data.success) {
-          setVerifiedExperts(response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching verified experts:", error);
-      } finally {
-        setLoading(false);
+  const fetchVerifiedExperts = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("/api/expert/verified");
+      if (response.data.success) {
+        setVerifiedExperts(response.data.data);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching verified experts:", error);
+    } finally {
+      // Small delay prevents flicker if data loads instantly
+      setTimeout(() => setLoading(false), 300);
+    }
+  };
 
+  useEffect(() => {
     fetchVerifiedExperts();
   }, []);
 
@@ -87,7 +89,7 @@ const VerifiedExpertsTable = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Sample sessions data (still dummy usually, or fetch from backend if needed)
+  // Sample sessions data (Dummy for now)
   const sessionsData = [
     {
       expertId: "2",
@@ -126,138 +128,154 @@ const VerifiedExpertsTable = () => {
     }
   };
 
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-b border-gray-100/50">
+      <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-32"></div><div className="h-3 bg-gray-100 rounded w-24 mt-2"></div></td>
+      <td className="px-6 py-4"><div className="h-5 bg-gray-200 rounded-full w-24"></div></td>
+      <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-28"></div></td>
+      <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-8 mx-auto"></div></td>
+      <td className="px-6 py-4 text-right"><div className="h-8 bg-gray-200 rounded w-24 ml-auto"></div></td>
+    </tr>
+  );
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-      {/* Header with Search */}
-      <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+    // MAIN PAGE CONTAINER - SINGLE CARD LAYOUT
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 min-h-[calc(100vh-8rem)]">
+
+      {/* Header with Search and Refresh */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Verified Experts</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage verified expert profiles</p>
+          <h2 className="text-2xl font-bold text-gray-900">Verified Experts</h2>
+          <p className="text-sm text-gray-500 mt-1">Manage verified expert profiles and view their activity.</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search experts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/10 focus:border-green-500 transition-all"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Search experts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm"
-          />
+          <button
+            onClick={fetchVerifiedExperts}
+            className="p-2 text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 rounded-lg border border-gray-200 transition-colors"
+            title="Refresh List"
+          >
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-24">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-        </div>
-      ) : (
-        <>
-          {/* Table Container */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50/50">
-                <tr>
-                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Expert Name</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sessions</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+      {/* Table Container */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden min-h-[400px]">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-50/50 border-b border-gray-100">
+            <tr>
+              <th className="py-4 px-6 font-medium text-gray-500 text-xs uppercase tracking-wider">Expert Name</th>
+              <th className="py-4 px-6 font-medium text-gray-500 text-xs uppercase tracking-wider">Category</th>
+              <th className="py-4 px-6 font-medium text-gray-500 text-xs uppercase tracking-wider">Location</th>
+              <th className="py-4 px-6 font-medium text-gray-500 text-xs uppercase tracking-wider text-center">Sessions</th>
+              <th className="py-4 px-6 font-medium text-gray-500 text-xs uppercase tracking-wider text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {loading ? (
+              // Flicker-Free Skeleton Loading
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : currentExperts.length > 0 ? (
+              currentExperts.map((exp) => (
+                <tr
+                  key={exp._id}
+                  className="hover:bg-gray-50/50 transition-colors"
+                >
+                  <td className="py-4 px-6">
+                    <div>
+                      <p className="font-medium text-gray-900">{exp.personalInformation.userName}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{exp.professionalDetails.title}</p>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                      {exp.personalInformation.category || exp.professionalDetails.industry}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 text-gray-600">
+                    {exp.personalInformation.city}
+                  </td>
+                  <td className="py-4 px-6 text-center text-gray-600 font-mono">
+                    {sessionsData.filter((s) => s.expertId === exp._id).length}
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => setSelectedExpert(exp)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
+                      >
+                        <Eye size={12} />
+                        Profile
+                      </button>
+                      <button
+                        onClick={() => setShowSessions(exp)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-200"
+                      >
+                        <FileText size={12} />
+                        Sessions
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {currentExperts.length > 0 ? (
-                  currentExperts.map((exp) => (
-                    <tr
-                      key={exp._id}
-                      className="hover:bg-gray-50/50 transition-colors"
-                    >
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="font-medium text-gray-900">{exp.personalInformation.userName}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{exp.professionalDetails.title}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
-                          {exp.personalInformation.category || exp.professionalDetails.industry}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-600">
-                        {exp.personalInformation.city}
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-600">
-                        {sessionsData.filter((s) => s.expertId === exp._id).length}
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => setSelectedExpert(exp)}
-                            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
-                          >
-                            Profile
-                          </button>
-                          <button
-                            onClick={() => setShowSessions(exp)}
-                            className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-200"
-                          >
-                            Sessions
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-gray-500 text-sm">
-                      No verified experts found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="py-20 text-center text-gray-500">
+                  No verified experts found matching your search.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          {/* Pagination Footer */}
-          {filteredExperts.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-sm text-gray-500">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredExperts.length)} of {filteredExperts.length}
-              </span>
-              <div className="flex items-center space-x-2">
+      {/* Pagination Footer */}
+      {!loading && filteredExperts.length > 0 && (
+        <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
+          <span className="text-sm text-gray-500">
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredExperts.length)} of {filteredExperts.length}
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-lg border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`p-2 rounded-lg border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
+                    ? 'bg-green-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  {page}
                 </button>
-                <div className="flex items-center space-x-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                        ? 'bg-green-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`p-2 rounded-lg border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              ))}
             </div>
-          )}
-        </>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-lg border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Profile Modal */}
