@@ -6,12 +6,8 @@ const Footer = () => (
         {/* Brand Column */}
         <div className="space-y-6">
           <div className="flex items-center gap-3 group">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center shadow-sm border border-blue-100 group-hover:bg-[#004fcb] transition-all duration-300 transform group-hover:-rotate-3">
-              <svg className="w-7 h-7 text-[#004fcb] group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="font-extrabold text-2xl text-slate-900 tracking-tight">BenchMock</div>
+            <img src="/mockeefy.png" alt="Mockeefy" className="h-10 w-auto object-contain" />
+            <div className="font-extrabold text-2xl text-slate-900 tracking-tight">Mockeefy</div>
           </div>
           <p className="text-slate-600 leading-relaxed text-sm max-w-xs">
             The world's leading <span className="text-[#004fcb] font-semibold">AI-powered</span> mock interview platform. Master your interviews with expert guidance.
@@ -68,7 +64,7 @@ const Footer = () => (
       <div className="pt-8 border-t border-slate-100">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-sm text-slate-400 font-medium text-center md:text-left">
-            © {new Date().getFullYear()} <span className="text-[#004fcb] font-bold">Mock Interview Platform</span>. All rights reserved.
+            © {new Date().getFullYear()} <span className="text-[#004fcb] font-bold">Mockeefy</span>. All rights reserved.
             <p className="mt-1 text-xs text-slate-400 font-normal">Professional interview preparation with verified experts</p>
           </div>
 

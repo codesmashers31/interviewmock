@@ -163,7 +163,7 @@ const PaymentPage: React.FC = () => {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
         amount: order.amount,
         currency: order.currency,
-        name: "InterviewMock",
+        name: "Mockeefy",
         description: orderSummary.productName,
         order_id: order.id,
         handler: handlePaymentSuccess,

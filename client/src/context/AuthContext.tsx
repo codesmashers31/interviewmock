@@ -23,7 +23,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<User>;
-  register: (email: string, password: string, userType: string, name: string) => Promise<void>;
+  register: (email: string, password: string, userType: string, name: string, googleId?: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   fetchProfile: () => Promise<User | null>;
@@ -159,9 +159,9 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, userType: string, name: string) => {
+  const register = async (email: string, password: string, userType: string, name: string, googleId?: string) => {
     try {
-      await axios.post('/api/auth/register', { email, password, userType, name });
+      await axios.post('/api/auth/register', { email, password, userType, name, googleId });
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
     }

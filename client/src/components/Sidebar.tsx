@@ -328,4 +328,22 @@ const Sidebar = () => {
   );
 };
 
+export const SkeletonSidebar = () => (
+  <div className="w-full max-w-xs mx-auto space-y-6 pb-6">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-24 animate-pulse p-4 flex gap-3">
+      <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+      </div>
+    </div>
+    <div className="w-full h-20 bg-gray-200 rounded-xl animate-pulse"></div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 space-y-1">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="h-11 w-full bg-gray-50 rounded-xl animate-pulse" />
+      ))}
+    </div>
+  </div>
+);
+
 export default Sidebar;

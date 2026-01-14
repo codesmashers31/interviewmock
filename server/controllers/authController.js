@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Otp from "../models/Otp.js";
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // JWT Secret (use environment variable in production)
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -147,9 +150,65 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
+// Verify Google Token and prepare for signup
+export const verifyGoogleToken = async (req, res) => {
+  const { token, userType } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: "Google ID token is required" });
+  }
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ googleId }, { email: email.toLowerCase() }]
+    });
+
+    if (existingUser) {
+      // If user exists, we logic them in (this covers Google login too)
+      // For now, let's treat this as a "verified signup attempt"
+      // If they exist, we just return their info so frontend can log them in
+      // or tell them "Account exists, please sign in"
+      return res.status(200).json({
+        exists: true,
+        message: "User already exists",
+        user: {
+          email: existingUser.email,
+          name: existingUser.name,
+          userType: existingUser.userType
+        }
+      });
+    }
+
+    // Return verification success and user info for step 3
+    res.status(200).json({
+      exists: false,
+      message: "Google token verified successfully",
+      googleData: {
+        email: email.toLowerCase(),
+        name,
+        googleId,
+        picture
+      }
+    });
+
+  } catch (error) {
+    console.error("Error verifying Google token:", error);
+    res.status(401).json({ message: "Invalid Google token", error: error.message });
+  }
+};
+
 // Register User
 export const registerUser = async (req, res) => {
-  const { email, password, userType, name } = req.body;
+  const { email, password, userType, name, googleId } = req.body;
 
   if (!email || !password || !userType || !name) {
     return res.status(400).json({ message: "All fields are required" });
@@ -157,7 +216,13 @@ export const registerUser = async (req, res) => {
 
   try {
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        ...(googleId ? [{ googleId }] : [])
+      ]
+    });
+
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -170,7 +235,8 @@ export const registerUser = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       userType,
-      name
+      name,
+      googleId
     });
 
     await newUser.save();

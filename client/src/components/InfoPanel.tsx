@@ -107,4 +107,28 @@ const InfoPanel = () => (
   </div>
 );
 
+export const SkeletonInfoPanel = () => (
+  <div className="space-y-4 animate-pulse">
+    {/* Mock Journey Card Skeleton */}
+    <div className="rounded-lg border border-gray-200 bg-white h-64 p-5 space-y-4">
+      <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+      <div className="space-y-2">
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="h-8 bg-gray-100 rounded w-full"></div>
+        ))}
+      </div>
+    </div>
+
+    {/* Safety Card Skeleton */}
+    <div className="rounded-lg border border-gray-200 bg-white h-24 p-5 flex gap-4">
+      <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+      </div>
+    </div>
+  </div>
+);
+
 export default InfoPanel;
