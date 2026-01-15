@@ -1,10 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Star,
   MapPin,
-
   Shield,
-
   CheckCircle,
   TrendingUp,
   Zap
@@ -12,7 +10,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
 import { getProfileImageUrl } from "../lib/imageUtils";
-// import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import FilterScrollStrip from "./FilterScrollStrip";
 
 // Types
@@ -215,17 +214,6 @@ const calculatePrice = (exp: string, cat: string) => {
   return `₹${base + (years >= 10 ? 300 : years >= 5 ? 200 : 100)}/hr`;
 };
 
-// --- CONSTANTS ---
-const CATEGORIES: { id: Category; name: string }[] = [
-  { id: "IT", name: "Technology" },
-  { id: "HR", name: "HR & Recruiting" },
-  { id: "Business", name: "Business" },
-  { id: "Design", name: "Design" },
-  { id: "Marketing", name: "Marketing" },
-  { id: "Finance", name: "Finance" },
-  { id: "AI", name: "AI & ML" }
-];
-
 // Smart Ranking Algorithm
 const calculateRelevanceScore = (profile: Profile): number => {
   let score = 0;
@@ -249,88 +237,182 @@ const calculateRelevanceScore = (profile: Profile): number => {
 
 // Main Component
 export default function CoachSessionCard() {
-  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth(); // Auth context to gate API calls
+
+  // --- React Query Implementation ---
+
+  // 1. Fetch Categories (Public Access)
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await axios.get("/api/categories");
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  // 2. Fetch Experts (Public Access)
+  const {
+    data: expertsData,
+    isLoading: isExpertsLoading,
+    isError: isExpertsError,
+    error: expertsError
+  } = useQuery({
+    queryKey: ["experts"],
+    queryFn: async () => {
+      const res = await axios.get("/api/expert/verified");
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // --- Data Processing ---
+
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  useEffect(() => {
-    const fetchExperts = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get("/api/expert/verified");
-
-        if (response.data?.success && response.data?.data) {
-          const mappedProfiles: Profile[] = response.data.data.map((expert: any) => {
-            const cat = expert.personalInformation?.category || "IT";
-            let exp = "";
-            if (expert.professionalDetails?.totalExperience) exp = expert.professionalDetails.totalExperience === 1 ? "1 year" : `${expert.professionalDetails.totalExperience} years`;
-            else exp = calculateProfessionalExperience(expert.professionalDetails) || (calculateAge(expert.personalInformation?.dob) - 22 > 0 ? `${calculateAge(expert.personalInformation?.dob) - 22}+ years` : "Fresher");
-
-            const p: Profile = {
-              id: expert._id || expert.userId,
-              expertID: expert.userId,
-              name: expert.personalInformation?.userName || "Expert",
-              role: getJobTitle(expert.professionalDetails, cat),
-              industry: expert.professionalDetails?.industry || cat,
-              experience: exp,
-              skills: [...(expert.skillsAndExpertise?.domains || []), ...(expert.skillsAndExpertise?.tools || [])].slice(0, 5),
-              languages: expert.skillsAndExpertise?.languages || [],
-              rating: expert.metrics?.avgRating || 0,
-              reviews: expert.metrics?.totalReviews || 0,
-              price: expert.pricing?.hourlyRate ? `₹${expert.pricing.hourlyRate}/hr` : calculatePrice(exp, cat),
-              category: cat as Category,
-              avatar: getProfileImageUrl(expert.profileImage),
-              location: expert.personalInformation?.city || "Online",
-              mode: expert.skillsAndExpertise?.mode || "Online",
-              responseTime: expert.metrics?.avgResponseTime ? `${Math.round(expert.metrics.avgResponseTime)}h` : "fast",
-              successRate: expert.metrics?.totalSessions > 0 ? (expert.metrics.completedSessions / expert.metrics.totalSessions) * 100 : 100,
-              isVerified: expert.status === "Active",
-              isFeatured: Math.random() > 0.8,
-              availability: expert.availability,
-              company: getCurrentCompany(expert.professionalDetails, cat)
-            };
-            return p;
-          });
-          setAllProfiles(mappedProfiles);
-        }
-      } catch (err) {
-        console.error("Error fetching experts:", err);
-        setError("Failed to load experts.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchExperts();
-  }, []);
-
-  const displayedProfiles = useMemo(() => {
-    // 1. Filter
-    let filtered = allProfiles;
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+  // Process Categories
+  const categories = useMemo(() => {
+    // Helper to extract array from various response shapes
+    let cats: any[] = [];
+    if (Array.isArray(categoriesData)) {
+      cats = categoriesData;
+    } else if (categoriesData?.success && Array.isArray(categoriesData?.data)) {
+      cats = categoriesData.data;
+    } else if (categoriesData?.data && Array.isArray(categoriesData.data)) {
+      cats = categoriesData.data;
     }
 
-    // 2. Smart Sort
+    if (cats.length > 0) {
+      return cats
+        .filter((c: any) => c.status === "Active")
+        .map((c: any) => ({
+          id: c.name,
+          name: c.name
+        }));
+    }
+
+    // Fallback only if strictly no data yet (handled by loading mostly)
+    return [];
+  }, [categoriesData]);
+
+
+  // Process Experts
+  const allProfiles = useMemo<Profile[]>(() => {
+    // Loading State: Return empty (skeletal handled by raw isLoading)
+    if (isExpertsLoading && !expertsData) return [];
+
+    let rawExperts: any[] = [];
+    if (expertsData?.success && Array.isArray(expertsData?.data)) {
+      rawExperts = expertsData.data;
+    } else if (Array.isArray(expertsData)) {
+      rawExperts = expertsData;
+    }
+
+    return rawExperts.map((expert: any) => {
+      const cat = expert.personalInformation?.category || "IT";
+      let exp = "";
+      if (expert.professionalDetails?.totalExperience) exp = expert.professionalDetails.totalExperience === 1 ? "1 year" : `${expert.professionalDetails.totalExperience} years`;
+      else exp = calculateProfessionalExperience(expert.professionalDetails) || (calculateAge(expert.personalInformation?.dob) - 22 > 0 ? `${calculateAge(expert.personalInformation?.dob) - 22}+ years` : "Fresher");
+
+      const p: Profile = {
+        id: expert._id || expert.userId,
+        expertID: expert.userId,
+        name: expert.personalInformation?.userName || "Expert",
+        role: getJobTitle(expert.professionalDetails, cat),
+        industry: expert.professionalDetails?.industry || cat,
+        experience: exp,
+        skills: [...(expert.skillsAndExpertise?.domains || []), ...(expert.skillsAndExpertise?.tools || [])].slice(0, 5),
+        languages: expert.skillsAndExpertise?.languages || [],
+        rating: expert.metrics?.avgRating || 0,
+        reviews: expert.metrics?.totalReviews || 0,
+        price: expert.pricing?.hourlyRate ? `₹${expert.pricing.hourlyRate}/hr` : calculatePrice(exp, cat),
+        category: cat as Category,
+        avatar: getProfileImageUrl(expert.profileImage),
+        location: expert.personalInformation?.city || "Online",
+        mode: expert.skillsAndExpertise?.mode || "Online",
+        responseTime: expert.metrics?.avgResponseTime ? `${Math.round(expert.metrics.avgResponseTime)}h` : "fast",
+        successRate: expert.metrics?.totalSessions > 0 ? (expert.metrics.completedSessions / expert.metrics.totalSessions) * 100 : 100,
+        isVerified: expert.status === "Active",
+        isFeatured: Math.random() > 0.8,
+        availability: expert.availability,
+        company: getCurrentCompany(expert.professionalDetails, cat)
+      };
+      return p;
+    });
+  }, [expertsData, isExpertsLoading]);
+
+
+  const displayedProfiles = useMemo<Profile[]>(() => {
+    // 1. Filter by Category (Matches Category OR Skills)
+    let filtered = allProfiles;
+    if (selectedCategory !== "All") {
+      filtered = filtered.filter(p =>
+        p.category === selectedCategory ||
+        p.skills.some(skill => skill.toLowerCase() === selectedCategory.toLowerCase())
+      );
+    }
+
+    // 2. Filter by Search Term
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(lowerTerm) ||
+        p.role.toLowerCase().includes(lowerTerm) ||
+        p.company?.toLowerCase().includes(lowerTerm) ||
+        p.skills.some(s => s.toLowerCase().includes(lowerTerm))
+      );
+    }
+
+    // 3. Smart Sort
     return filtered.sort((a, b) => calculateRelevanceScore(b) - calculateRelevanceScore(a));
-  }, [allProfiles, selectedCategory]);
+  }, [allProfiles, selectedCategory, searchTerm]);
+
+  // Determine Loading State
+  // Guests & Users: Both see skeletons while fetching dynamic data
+  const showLoading = isExpertsLoading;
+  const showError = !!user && isExpertsError;
 
   return (
-    <div className="bg-white min-h-[500px]">
-      {/* Header & Filter */}
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[#004fcb]">
-            <TrendingUp className="w-5 h-5" />
-            <h2 className="text-xl font-bold text-gray-900">Top Rated Experts</h2>
+    <div className="space-y-6">
+      {/* Header Card with Search */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-5 h-5 text-[#004fcb]" />
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">FIND EXPERTS</h1>
+            </div>
+            <p className="text-sm text-gray-500 font-medium">Connect with verified professionals for your mock interview</p>
           </div>
-          <div className="hidden md:flex text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-            {displayedProfiles.length} verified experts
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {displayedProfiles.slice(0, 3).map((p, i) => (
+                <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
+                  <img src={p.avatar} className="w-full h-full object-cover" alt="" onError={(e) => { e.currentTarget.src = getProfileImageUrl(null); }} />
+                </div>
+              ))}
+            </div>
+            <span className="text-xs font-bold text-[#004fcb] ml-1">{displayedProfiles.length} EXPERTS</span>
           </div>
         </div>
 
+        <div className="relative">
+          <TrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, role, company or skill..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-4 focus:ring-[#004fcb]/5 focus:border-[#004fcb]/20 outline-none transition-all text-sm font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Categories / Filters */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm">
         <FilterScrollStrip
-          items={CATEGORIES}
+          items={categories}
           selectedItem={selectedCategory}
           onSelect={setSelectedCategory}
           isCategory={true}
@@ -338,21 +420,31 @@ export default function CoachSessionCard() {
       </div>
 
       {/* Grid Content */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      {showLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map(n => <SkeletonCard key={n} />)}
         </div>
-      ) : error ? (
+      ) : showError ? (
         <div className="text-center py-20 text-red-500 font-medium">
           <CheckCircle className="w-12 h-12 mx-auto mb-2 text-red-200" />
-          {error}
+          {expertsError instanceof Error ? expertsError.message : "Failed to load experts."}
         </div>
       ) : displayedProfiles.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <p className="text-gray-500 font-medium">No experts found in this category.</p>
+        <div className="text-center py-20 bg-white border-2 border-dashed border-gray-200 rounded-3xl">
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Star className="w-10 h-10 text-[#004fcb]" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No experts found</h3>
+          <p className="text-gray-500 font-medium max-w-xs mx-auto">Try adjusting your filters or search terms.</p>
+          <button
+            onClick={() => { setSearchTerm(""); setSelectedCategory("All"); }}
+            className="mt-6 text-[#004fcb] font-bold hover:underline"
+          >
+            Clear all filters
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {displayedProfiles.map(profile => (
             <ProfileCard key={profile.id} profile={profile} />
           ))}

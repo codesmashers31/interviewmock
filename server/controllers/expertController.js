@@ -152,12 +152,20 @@ export const uploadProfilePhoto = async (req, res) => {
     // find expert
     const queryUserId = toObjectId(userIdRaw);
 
-    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    let expert = await ExpertDetails.findOne({ userId: queryUserId });
+
+    // Auto-create if not found
     if (!expert) {
-      // If using Cloudinary, we might want to delete the uploaded image if expert not found, 
-      // but typically we just fail fast. Ideally check expert existence before upload, 
-      // but multer runs first.
-      return res.status(404).json({ success: false, message: "Expert profile not found. Create personal info first." });
+      expert = new ExpertDetails({
+        userId: queryUserId,
+        status: "pending",
+        personalInformation: {},
+        professionalDetails: {},
+        education: [],
+        skillsAndExpertise: { mode: "Online", domains: [], tools: [], languages: [] },
+        availability: { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
+        verification: {}
+      });
     }
 
     // Update image URL
@@ -288,34 +296,52 @@ export const getExpertProfile = async (req, res) => {
     if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized: user id missing" });
 
     const queryUserId = toObjectId(userIdRaw);
-    const expert = await ExpertDetails.findOne({ userId: queryUserId }).lean();
-    if (!expert) return res.status(404).json({ success: false, message: "Expert profile not found" });
+    let expert = await ExpertDetails.findOne({ userId: queryUserId });
+
+    // Auto-create expert profile if it doesn't exist (Lazy initialization)
+    if (!expert) {
+      // Fetch user name from User model if possible to pre-fill
+      // For now, create basic empty profile
+      expert = new ExpertDetails({
+        userId: queryUserId,
+        status: "pending",
+        personalInformation: {},
+        professionalDetails: {},
+        education: [],
+        skillsAndExpertise: { mode: "Online", domains: [], tools: [], languages: [] },
+        availability: { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
+        verification: {}
+      });
+      await expert.save();
+    }
+
+    const expertLean = expert.toObject ? expert.toObject() : expert;
 
     const profile = {
-      name: expert.personalInformation?.userName || "",
-      mobile: expert.personalInformation?.mobile || "",
-      gender: expert.personalInformation?.gender || "",
-      dob: expert.personalInformation?.dob ? new Date(expert.personalInformation.dob).toISOString().split("T")[0] : "",
-      country: expert.personalInformation?.country || "",
-      state: expert.personalInformation?.state || "",
-      city: expert.personalInformation?.city || "",
-      title: expert.professionalDetails?.title || "",
-      company: expert.professionalDetails?.company || "",
-      totalExperience: expert.professionalDetails?.totalExperience ?? "",
-      industry: expert.professionalDetails?.industry || "",
-      previous: expert.professionalDetails?.previous || [],
-      education: expert.education || [],
-      skillsAndExpertise: expert.skillsAndExpertise || { mode: "Online", domains: [], tools: [], languages: [] },
-      availability: expert.availability || { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
-      verification: expert.verification || {},
-      status: expert.status || "pending",
-      rejectionReason: expert.rejectionReason || "",
-      photoUrl: expert.profileImage || "",
-      category: expert.personalInformation?.category || ""
+      name: expertLean.personalInformation?.userName || "",
+      mobile: expertLean.personalInformation?.mobile || "",
+      gender: expertLean.personalInformation?.gender || "",
+      dob: expertLean.personalInformation?.dob ? new Date(expertLean.personalInformation.dob).toISOString().split("T")[0] : "",
+      country: expertLean.personalInformation?.country || "",
+      state: expertLean.personalInformation?.state || "",
+      city: expertLean.personalInformation?.city || "",
+      title: expertLean.professionalDetails?.title || "",
+      company: expertLean.professionalDetails?.company || "",
+      totalExperience: expertLean.professionalDetails?.totalExperience ?? "",
+      industry: expertLean.professionalDetails?.industry || "",
+      previous: expertLean.professionalDetails?.previous || [],
+      education: expertLean.education || [],
+      skillsAndExpertise: expertLean.skillsAndExpertise || { mode: "Online", domains: [], tools: [], languages: [] },
+      availability: expertLean.availability || { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
+      verification: expertLean.verification || {},
+      status: expertLean.status || "pending",
+      rejectionReason: expertLean.rejectionReason || "",
+      photoUrl: expertLean.profileImage || "",
+      category: expertLean.personalInformation?.category || ""
     };
 
-    const completion = computeCompletion(expert);
-    const missingSections = getMissingSections(expert);
+    const completion = computeCompletion(expertLean);
+    const missingSections = getMissingSections(expertLean);
     return res.json({ success: true, completion, missingSections, profile });
   } catch (err) {
     console.error("getExpertProfile error:", err);

@@ -244,6 +244,16 @@ const BookSessionPage = () => {
       }
 
       while (currentMinutes + sessionDuration <= endMinutes) {
+        // Validation: Don't show past slots for "Today"
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+        const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
+        if (isToday && currentMinutes <= currentTimeMinutes) {
+          currentMinutes += sessionDuration;
+          continue;
+        }
+
         const slotStartMinutes = currentMinutes;
         const slotDate = new Date(date);
         slotDate.setHours(Math.floor(slotStartMinutes / 60), slotStartMinutes % 60, 0, 0);
@@ -363,12 +373,12 @@ const BookSessionPage = () => {
           <div className="relative shrink-0 -mt-16 md:-mt-20">
             <div className="relative inline-block">
               <img
-                src={profile.avatar || "/mockeefy.png"}
+                src={profile.avatar || "/mockeefynew.png"}
                 alt={profile.name}
                 className="w-24 h-24 md:w-28 md:h-28 rounded-2xl border-4 border-white bg-white object-cover shadow-md"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/mockeefy.png";
+                  target.src = "/mockeefynew.png";
                 }}
               />
               <div className="absolute bottom-2 right-2 bg-green-500 border-2 border-white w-4 h-4 rounded-full"></div>

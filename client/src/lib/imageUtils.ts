@@ -8,7 +8,7 @@ import { API_BASE_URL } from '../config';
  */
 export const getProfileImageUrl = (path?: string | null): string => {
     if (!path) {
-        return '/mockeefy.png';
+        return '/mockeefynew.png';
     }
 
     // If it's already a full URL (including UI avatars or external links), return it

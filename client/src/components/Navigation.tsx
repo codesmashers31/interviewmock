@@ -15,7 +15,8 @@ import {
   BookOpen,
   HelpCircle,
   ChevronDown,
-  PlayCircle
+  PlayCircle,
+  Bot
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImageUrl } from "../lib/imageUtils";
@@ -156,6 +157,7 @@ const Navigation = () => {
     { name: "Find HRs", href: "/", icon: <Users size={18} /> },
     { name: "Watch Mock", href: "/watch-mock", icon: <PlayCircle size={18} /> },
     { name: "My Sessions", href: "/my-sessions", icon: <Calendar size={18} /> },
+    { name: "AI Interview", href: "/ai-interview", icon: <Bot size={18} /> },
   ];
 
   const profileMenuItems = [
@@ -171,21 +173,21 @@ const Navigation = () => {
         ref={menuRef}
         className="bg-white border-b border-blue-100/50 sticky top-0 z-50 w-full h-[80px]"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
             {/* Left side: Logo + Nav Items */}
             <div className="flex items-center space-x-4 lg:space-x-12">
               <Link
                 to="/"
-                className="flex items-center space-x-3 group min-w-max"
+                className="flex items-center gap-0 group min-w-max relative"
                 onClick={closeAllDropdowns}
               >
                 <img
-                  src="/mockeefy.png"
+                  src="/mockeefynew.png"
                   alt="Mockeefy"
-                  className="h-10 w-auto object-contain"
+                  className="absolute  h-[100px] w-auto object-contain mix-blend-multiply"
                 />
-                <span className="text-xl font-bold text-[#002a6b] tracking-tight">
+                <span className="text-3xl font-bold tracking-tight ml-[90px] text-[#004fcb] font-['Outfit']">
                   Mockeefy
                 </span>
               </Link>

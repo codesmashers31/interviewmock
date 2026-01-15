@@ -1,13 +1,31 @@
 const Footer = () => (
   <footer className="w-full border-t border-slate-100 bg-white">
-    <div className="max-w-screen-xl mx-auto px-6 py-8 md:py-10">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+      {/* Newsletter Section */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 p-8 bg-blue-50/50 rounded-2xl border border-blue-100">
+        <div className="space-y-2 text-center md:text-left">
+          <h3 className="text-xl font-bold text-slate-900">Stay ahead of the curve</h3>
+          <p className="text-slate-500 text-sm">Get the latest interview tips and expert insights delivered to your inbox.</p>
+        </div>
+        <div className="flex w-full md:w-auto gap-3">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            className="h-11 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white w-full md:w-80 text-sm"
+          />
+          <button className="h-11 px-8 bg-[#004fcb] hover:bg-[#003bb5] text-white font-semibold rounded-xl text-sm shadow-sm transition-all whitespace-nowrap hover:shadow-md">
+            Subscribe
+          </button>
+        </div>
+      </div>
+
       {/* Main Footer Content */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
         {/* Brand Column */}
         <div className="space-y-6">
-          <div className="flex items-center gap-3 group">
-            <img src="/mockeefy.png" alt="Mockeefy" className="h-10 w-auto object-contain" />
-            <div className="font-extrabold text-2xl text-slate-900 tracking-tight">Mockeefy</div>
+          <div className="flex items-center gap-0 group relative h-12">
+            <img src="/mockeefynew.png" alt="Mockeefy" className="absolute top-[-20px] left-0 h-[90px] w-auto object-contain mix-blend-multiply" />
+            <div className="font-bold text-3xl text-[#004fcb] tracking-tight ml-[90px] font-['Outfit']">Mockeefy</div>
           </div>
           <p className="text-slate-600 leading-relaxed text-sm max-w-xs">
             The world's leading <span className="text-[#004fcb] font-semibold">AI-powered</span> mock interview platform. Master your interviews with expert guidance.

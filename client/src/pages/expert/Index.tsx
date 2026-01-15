@@ -1,32 +1,25 @@
-// src/pages/expert/Index.tsx
-
 import ExpertStats from "../../components/ExpertStats";
-import DashboardSessions from "../../components/DashboardSessions";
-import DashboardChats from "../../components/DashboardChats";
+// import DashboardSessions from "../../components/DashboardSessions";
+// import DashboardChats from "../../components/DashboardChats";
 
 export default function DashboardIndex() {
   return (
-    <div className="p-0 bg-transparent space-y-8">
-      {/* 1. Top Section: Stats Cards */}
-      <section>
-        <h1 className="text-2xl font-black text-gray-900 mb-6 px-1">Overview</h1>
-        <ExpertStats />
-      </section>
+    <div className="h-full bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+      {/* Scrollable Container for the whole white card content if screen is too small, OR strictly fixed */}
+      {/* User wants internal scrolling for lists, not the whole page. So we structure it with flex. */}
 
-      {/* 2. Main Content Grid: Sessions & Chats */}
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-        {/* Left Column: Recent Sessions (Takes up 2/3 space on large screens) */}
-        <div className="xl:col-span-2">
-          <DashboardSessions />
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* 1. Top Section: Stats Cards - Fixed Height / Shrink-0 */}
+        <div className="p-6 pb-2 shrink-0">
+          <h1 className="text-xl font-bold text-gray-900 mb-4">Overview</h1>
+          <ExpertStats />
         </div>
 
-        {/* Right Column: Chats / Messages (Takes up 1/3 space) */}
-        <div className="xl:col-span-1">
-          <DashboardChats />
-        </div>
-
-      </section>
+        {/* 2. Main Content Grid: Sessions & Chats - Takes remaining height */}
+        {/*
+          Sessions and Chats sections are commented out as per requirement.
+        */}
+      </div>
     </div>
   );
 }

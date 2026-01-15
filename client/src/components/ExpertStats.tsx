@@ -48,7 +48,7 @@ const ExpertStats = () => {
 
   function StatCard({ title, value, sub, icon, trend }: StatCardProps) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm h-full">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="p-3 rounded-xl bg-gray-50 text-gray-700 border border-gray-100">
             {icon}
@@ -100,7 +100,7 @@ const ExpertStats = () => {
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-5">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Sessions"
@@ -129,13 +129,13 @@ const ExpertStats = () => {
       </div>
 
       {/* Additional Professional Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         {/* Revenue Card */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-800 mt-1">₹ {loading ? "..." : stats.revenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-800 mt-1">₹ {loading ? "-" : stats.revenue.toLocaleString()}</p>
               <p className="text-green-600 text-xs mt-1 font-semibold flex items-center gap-1">
                 Generating value
               </p>
@@ -149,11 +149,11 @@ const ExpertStats = () => {
         </div>
 
         {/* Completion Rate Card */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Session Completion</p>
-              <p className="text-2xl font-bold text-gray-800 mt-1">{loading ? "..." : stats.completionRate}%</p>
+              <p className="text-2xl font-bold text-gray-800 mt-1">{loading ? "-" : stats.completionRate}%</p>
               <p className="text-blue-600 text-xs mt-1 font-semibold">Reliability Score</p>
             </div>
             <div className="p-3 bg-blue-50 rounded-full">
@@ -165,7 +165,7 @@ const ExpertStats = () => {
         </div>
 
         {/* Response Time Card - Mock for now as agreed */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Avg. Response Time</p>

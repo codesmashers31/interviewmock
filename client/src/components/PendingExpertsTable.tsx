@@ -146,8 +146,8 @@ const PendingExpertsTable: React.FC = () => {
     };
 
     const filteredExperts = pendingExperts.filter(exp =>
-        exp.personalInformation.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        exp.professionalDetails.industry.toLowerCase().includes(searchTerm.toLowerCase())
+        (exp.personalInformation?.userName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (exp.professionalDetails?.industry?.toLowerCase() || "").includes(searchTerm.toLowerCase())
     );
 
     const totalPages = Math.ceil(filteredExperts.length / itemsPerPage);

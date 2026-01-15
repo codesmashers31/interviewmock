@@ -33,10 +33,10 @@ export default function AdminSidebar() {
 
     return (
         <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
-            <div className="flex items-center px-6 py-3 border-b border-gray-100 flex-shrink-0">
-                <div className="flex items-center gap-2 font-bold text-gray-900 text-lg">
-                    <img src="/mockeefy.png" alt="Mockeefy" className="h-8 w-auto object-contain" />
-                    Mockeefy Admin
+            <div className="flex items-center px-6 py-6 border-b border-gray-100 flex-shrink-0 relative overflow-visible">
+                <div className="flex items-center gap-0 font-bold text-[#004fcb] text-2xl font-['Outfit'] relative">
+                    <img src="/mockeefynew.png" alt="Mockeefy" className="absolute top-[-15px] left-[-10px] h-[70px] w-auto object-contain mix-blend-multiply" />
+                    <span className="ml-[60px]">Mockeefy Admin</span>
                 </div>
             </div>
 

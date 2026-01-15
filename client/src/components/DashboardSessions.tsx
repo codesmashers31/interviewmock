@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
 import axios from "../lib/axios";
-import { Search, Calendar, Video, CheckCircle, AlertCircle, Clock, MoreVertical, X } from "lucide-react";
+import { Search, Calendar, Clock, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+
 import { getProfileImageUrl } from "../lib/imageUtils";
 
 interface Session {
@@ -42,7 +42,7 @@ const DashboardSessions = () => {
     const fetchSessions = async () => {
         try {
             // Assuming we are an expert based on context, but this endpoint should return relevant sessions
-            const res = await axios.get("/api/sessions/all?role=expert"); // Or specific expert endpoint
+            // const res = await axios.get("/api/sessions/all?role=expert");
             // NOTE: Using /all for admin, but for expert usually /expert/:id. 
             // Checking previous logic in ExpertStats, it uses /expert/stats.
             // Let's try to get sessions for the logged in expert.
@@ -126,10 +126,10 @@ const DashboardSessions = () => {
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0 relative">
                 <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-50/50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
+                    <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                        <tr className="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
                             <th className="px-6 py-4 font-semibold">Candidate</th>
                             <th className="px-6 py-4 font-semibold">Topic & Date</th>
                             <th className="px-6 py-4 font-semibold">Status</th>
@@ -139,7 +139,7 @@ const DashboardSessions = () => {
                     <tbody className="divide-y divide-gray-50">
                         {loading ? (
                             [...Array(3)].map((_, i) => (
-                                <tr key={i} className="animate-pulse">
+                                <tr key={i} className="border-b border-gray-50">
                                     <td className="px-6 py-4"><div className="h-10 w-32 bg-gray-100 rounded-lg"></div></td>
                                     <td className="px-6 py-4"><div className="h-10 w-48 bg-gray-100 rounded-lg"></div></td>
                                     <td className="px-6 py-4"><div className="h-6 w-20 bg-gray-100 rounded-full"></div></td>
@@ -195,7 +195,7 @@ const DashboardSessions = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border capitalize ${getStatusColor(session.status)}`}>
-                                            {session.status === 'confirmed' && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>}
+                                            {session.status === 'confirmed' && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
                                             {session.status}
                                         </span>
                                     </td>

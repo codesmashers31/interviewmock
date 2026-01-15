@@ -1,20 +1,19 @@
 // src/components/RegisterForm.tsx
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import api from '../lib/axios';
 import { isAxiosError } from 'axios';
 import { Card, CardContent } from "./ui/card";
-import { useAuth } from "../context/AuthContext";
-import Select from "react-select";
+
+
 import { GoogleLogin } from '@react-oauth/google';
 
 interface FormData {
   email: string;
-  userType: string;
+
   otp: string;
   name: string;
   password: string;
@@ -22,16 +21,12 @@ interface FormData {
   googleId?: string;
 }
 
-const userTypeOptions = [
-  { value: "candidate", label: "Candidate" },
-  { value: "expert", label: "Expert" }
-];
+
 
 export const RegisterForm = () => {
-  const [step, setStep] = useState<"email" | "otp" | "details">("email");
+  const [step, setStep] = useState<"email" | "otp">("email");
   const [formData, setFormData] = useState<FormData>({
     email: "",
-    userType: "",
     otp: "",
     name: "",
     password: "",
@@ -39,12 +34,11 @@ export const RegisterForm = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  const { register } = useAuth();
+
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
@@ -55,17 +49,15 @@ export const RegisterForm = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setError("");
-    if (!formData.userType) {
-      setError("Please select your role first");
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!credentialResponse.credential) {
+      setError("Google sign in failed");
       return;
     }
 
     setIsLoading(true);
     try {
       const response = await api.post("/api/auth/google-signup", {
-        token: credentialResponse.credential,
-        userType: formData.userType
+        token: credentialResponse.credential
       });
 
       if (response.data.exists) {
@@ -74,14 +66,13 @@ export const RegisterForm = () => {
         return;
       }
 
-      setFormData(prev => ({
-        ...prev,
-        email: response.data.googleData.email,
-        name: response.data.googleData.name,
-        googleId: response.data.googleData.googleId
-      }));
-
-      setStep("details");
+      navigate("/complete-profile", {
+        state: {
+          email: response.data.googleData.email,
+          googleId: response.data.googleData.googleId,
+          name: response.data.googleData.name
+        }
+      });
       setIsLoading(false);
     } catch (err) {
       setIsLoading(false);
@@ -93,10 +84,7 @@ export const RegisterForm = () => {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!formData.userType) {
-      setError("Please select whether you're a Candidate or Expert");
-      return;
-    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError("Please enter a valid email address");
@@ -128,7 +116,11 @@ export const RegisterForm = () => {
         otp: formData.otp
       });
       setIsLoading(false);
-      setStep("details");
+      navigate("/complete-profile", {
+        state: {
+          email: formData.email
+        }
+      });
     } catch (err: unknown) {
       setIsLoading(false);
       if (isAxiosError(err)) {
@@ -141,51 +133,12 @@ export const RegisterForm = () => {
     }
   };
 
-  const handleDetailsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    if (!formData.name.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    setIsLoading(true);
-    setError("");
-    try {
-      await register(
-        formData.email,
-        formData.password,
-        formData.userType,
-        formData.name.trim(),
-        formData.googleId
-      );
-      setIsLoading(false);
-      if (formData.userType === "expert") {
-        navigate("/dashboard");
-      } else {
-        navigate("/");
-      }
-    } catch (err: unknown) {
-      setIsLoading(false);
-      if (err instanceof Error) {
-        setError(err.message || "Registration failed");
-      } else {
-        setError("Registration failed");
-      }
-    }
-  };
+
 
   const sendOtp = async () => {
     try {
       const response = await api.post("/api/auth/send-otp", {
-        email: formData.email,
-        userType: formData.userType
+        email: formData.email
       });
       return response.data;
     } catch (err: unknown) {
@@ -238,27 +191,25 @@ export const RegisterForm = () => {
 
             {/* Header: Logo + Title */}
             <div className="flex flex-col items-center justify-center mb-6 space-y-4">
-              <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-center gap-0 relative h-24">
                 <img
-                  src="/mockeefy.png"
+                  src="/mockeefynew.png"
                   alt="Mockeefy"
-                  className="h-10 w-auto object-contain"
+                  className="absolute top-[-20px] h-[100px] w-auto object-contain mix-blend-multiply -ml-[140px]"
                 />
-                <span className="text-2xl font-bold text-[#002a6b] tracking-tight">
+                <span className="text-4xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] ml-[40px]">
                   Mockeefy
                 </span>
               </div>
 
               <div className="text-center space-y-1">
                 <h1 className="text-xl font-bold text-gray-900">
-                  {step === "email" ? "Create your account" : step === "otp" ? "Verify your email" : "Complete your profile"}
+                  {step === "email" ? "Create your account" : "Verify your email"}
                 </h1>
                 <p className="text-gray-500 text-xs text-balance">
                   {step === "email"
                     ? "Join thousands of professionals mastering interviews"
-                    : step === "otp"
-                      ? `Enter verification code sent to ${formData.email}`
-                      : "Add your personal details to get started"}
+                    : `Enter verification code sent to ${formData.email}`}
                 </p>
               </div>
             </div>
@@ -286,37 +237,7 @@ export const RegisterForm = () => {
                       required
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="userType" className="text-xs font-semibold text-gray-700">
-                      I am a
-                    </Label>
-                    <Select
-                      id="userType"
-                      options={userTypeOptions}
-                      value={userTypeOptions.find(o => o.value === formData.userType)}
-                      onChange={option => handleInputChange("userType", option?.value ?? "")}
-                      placeholder="Select your role"
-                      classNamePrefix="react-select"
-                      styles={{
-                        control: base => ({
-                          ...base,
-                          minHeight: "2.5rem",
-                          borderColor: "#D1D5DB",
-                          boxShadow: "none",
-                          fontSize: "0.875rem",
-                          borderRadius: "0.375rem",
-                          '&:hover': {
-                            borderColor: "#9CA3AF"
-                          }
-                        }),
-                        menu: base => ({
-                          ...base,
-                          fontSize: "0.875rem",
-                          zIndex: 10,
-                        }),
-                      }}
-                    />
-                  </div>
+
                   <Button
                     type="submit"
                     className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md shadow-sm transition-all text-sm mt-2"
@@ -392,77 +313,8 @@ export const RegisterForm = () => {
                   ← Use a different email
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleDetailsSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-xs font-semibold text-gray-700">
-                    Full Name
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your name"
-                    value={formData.name}
-                    onChange={e => handleInputChange("name", e.target.value)}
-                    className="w-full h-10 border-gray-300 focus:ring-2 focus:ring-blue-600 text-sm"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-xs font-semibold text-gray-700">
-                    Create Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="At least 6 characters"
-                      value={formData.password}
-                      onChange={e => handleInputChange("password", e.target.value)}
-                      className="w-full h-10 pr-10 border-gray-300 focus:ring-2 focus:ring-blue-600 text-sm"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword" className="text-xs font-semibold text-gray-700">
-                    Confirm Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Repeat password"
-                      value={formData.confirmPassword}
-                      onChange={e => handleInputChange("confirmPassword", e.target.value)}
-                      className="w-full h-10 pr-10 border-gray-300 focus:ring-2 focus:ring-blue-600 text-sm"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md shadow-sm transition-all text-sm mt-2"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating account..." : "Complete Account Creation"}
-                </Button>
-              </form>
-            )}
+
+            ) : null}
 
             <div className="text-center pt-6">
               <p className="text-xs text-gray-500">
@@ -475,7 +327,7 @@ export const RegisterForm = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   );
 };
 

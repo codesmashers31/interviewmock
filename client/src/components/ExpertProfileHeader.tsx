@@ -1,169 +1,135 @@
-import { useEffect, useRef, useState, ReactNode } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from '../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
-import { Card, SecondaryButton } from "../pages/ExpertDashboard";
-import { Shield } from "lucide-react";
+import { Camera, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import Stepper, { Step } from "./ui/stepper";
 
-function ProgressRing({ size = 110, stroke = 8, percent = 0, children }: { size?: number; stroke?: number; percent?: number; children: ReactNode }) {
+// Progress Ring Component
+const ProgressRing = memo(({
+  percent = 0,
+  children
+}: {
+  percent?: number;
+  children: React.ReactNode
+}) => {
+  const size = 110; // Slightly larger for better visibility
+  const stroke = 6;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
 
   return (
-    <div style={{ width: size, height: size }} className="relative">
-      <svg width={size} height={size}>
-        <defs>
-          <linearGradient id="prg" x1="0" x2="1">
-            <stop offset="0%" stopColor="#3b82f6" />
-            <stop offset="100%" stopColor="#1d4ed8" />
-          </linearGradient>
-        </defs>
-
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#f1f5f9" strokeWidth={stroke} fill="transparent" />
-
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#prg)"
+          stroke="#e5e7eb"
+          strokeWidth={stroke}
+          fill="transparent"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#3b82f6"
           strokeWidth={stroke}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
           fill="transparent"
-          className="transition-all duration-500 ease-out"
+          className="transition-all duration-500"
         />
       </svg>
-
-      <div
-        className="absolute inset-0 flex items-center justify-center rounded-full overflow-hidden border-4 border-white shadow-sm"
-        style={{
-          width: size - stroke * 2,
-          height: size - stroke * 2,
-          left: stroke,
-          top: stroke,
-        }}
-      >
+      <div className="absolute inset-0 flex items-center justify-center">
         {children}
       </div>
     </div>
   );
-}
+});
 
-const ExpertProfileHeader = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
+ProgressRing.displayName = "ProgressRing";
+
+const ExpertProfileHeader = memo(({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  /* token removed */
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "", status: "pending", rejectionReason: "" });
+  const [profile, setProfile] = useState({
+    name: "",
+    title: "",
+    company: "",
+    photoUrl: "",
+    status: "pending",
+    rejectionReason: ""
+  });
   const [completion, setCompletion] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [missingSections, setMissingSections] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fallbackName = user?.name || "";
+  const fetchProfile = useCallback(async () => {
+    if (!user) return;
 
-  const fetchProfile = async () => {
     setLoading(true);
-    setError(null);
-
-    if (!user) {
-      setError("No user found. Please login.");
-      setProfile(prev => ({ ...prev, name: fallbackName }));
-      setLoading(false);
-      return;
-    }
-
     try {
       const res = await axios.get("/api/expert/profile");
 
       if (res.data?.success) {
         const p = res.data.profile || {};
         setProfile({
-          name: p.name || fallbackName,
+          name: p.name || user.name || "",
           title: p.title || "",
           company: p.company || "",
           photoUrl: p.photoUrl || "",
           status: p.status || "pending",
           rejectionReason: p.rejectionReason || ""
         });
-        setCompletion(typeof res.data.completion === "number" ? res.data.completion : 0);
+        setCompletion(res.data.completion || 0);
         setMissingSections(res.data.missingSections || []);
-      } else {
-        setError(res.data?.message || "Failed to fetch profile");
-        setProfile(prev => ({ ...prev, name: fallbackName }));
       }
     } catch (err: any) {
-      console.error("fetchProfile error:", err);
-
-      // Check for 404 specifically
-      if (err.response && err.response.status === 404) {
-        if (location.pathname !== "/dashboard/profile") {
-          toast.error("Expert profile not found. Please complete your profile.");
-          navigate("/dashboard/profile");
-        }
-        setProfile(prev => ({ ...prev, name: fallbackName }));
-        return;
+      if (err.response?.status === 404) {
+        // Handle 404 silently or redirect if needed, but here we expect data now
+        console.error("Profile not found");
       }
-
-      const msg = err?.response?.data?.message || err.message || "Error fetching profile";
-      setError(msg);
-      setProfile(prev => ({ ...prev, name: fallbackName }));
+      console.error("Profile fetch error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, navigate]);
 
   useEffect(() => {
     fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [fetchProfile]);
 
   const handlePhotoUpload = async (file: File) => {
-    if (!file) return;
-    if (!user) {
-      setError("No user found. Please login.");
-      return;
-    }
+    if (!file || !user) return;
+
     setUploading(true);
-    setError(null);
-
     try {
-      const fd = new FormData();
-      fd.append("photo", file);
+      const formData = new FormData();
+      formData.append("photo", file);
 
-      const res = await axios.post("/api/expert/profile/photo", fd, {
+      const res = await axios.post("/api/expert/profile/photo", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
       if (res.data?.success) {
-        const p = res.data.profile || {};
+        toast.success("Profile photo updated");
         setProfile(prev => ({
           ...prev,
-          name: p.name || prev.name,
-          title: p.title || prev.title,
-          company: p.company || prev.company,
-          photoUrl: p.photoUrl || prev.photoUrl,
-
-          status: p.status || prev.status,
-          rejectionReason: p.rejectionReason || prev.rejectionReason
+          photoUrl: res.data.profile?.photoUrl || prev.photoUrl
         }));
-        setCompletion(typeof res.data.completion === "number" ? res.data.completion : completion);
-        setMissingSections(res.data.missingSections || missingSections);
-      } else {
-        setError(res.data?.message || "Upload failed");
+        // Refresh to get updated completion status
+        fetchProfile();
       }
     } catch (err: any) {
-      console.error("handlePhotoUpload error:", err);
-      const msg = err?.response?.data?.message || err.message || "Upload failed";
-      setError(msg);
+      console.error("Upload Error:", err);
+      toast.error(err.response?.data?.message || "Failed to upload photo");
     } finally {
       setUploading(false);
     }
@@ -174,170 +140,253 @@ const ExpertProfileHeader = ({ onNavigate }: { onNavigate?: (tab: string) => voi
       setLoading(true);
       const res = await axios.post("/api/expert/resubmit");
       if (res.data.success) {
-        toast.success("Profile resubmitted for verification!");
-        fetchProfile(); // refresh status
-      } else {
-        toast.error(res.data.message || "Resubmission failed");
+        toast.success("Profile resubmitted");
+        fetchProfile();
       }
-    } catch (err: any) {
-      console.error("Resubmit error:", err);
-      toast.error("Failed to resubmit profile");
+    } catch (err) {
+      toast.error("Failed to resubmit");
     } finally {
       setLoading(false);
     }
   };
 
+  const getStatusConfig = (status: string) => {
+    const configs = {
+      Active: {
+        label: "Verified",
+        icon: CheckCircle,
+        color: "text-green-600 bg-green-50 border-green-200",
+        badgeColor: "bg-green-500"
+      },
+      approved: {
+        label: "Approved",
+        icon: CheckCircle,
+        color: "text-blue-600 bg-blue-50 border-blue-200",
+        badgeColor: "bg-blue-500"
+      },
+      rejected: {
+        label: "Rejected",
+        icon: XCircle,
+        color: "text-red-600 bg-red-50 border-red-200",
+        badgeColor: "bg-red-500"
+      },
+      default: {
+        label: "Pending",
+        icon: AlertCircle,
+        color: "text-amber-600 bg-amber-50 border-amber-200",
+        badgeColor: "bg-amber-500"
+      }
+    };
 
+    return configs[status as keyof typeof configs] || configs.default;
+  };
+
+  const statusConfig = getStatusConfig(profile.status);
+  const StatusIcon = statusConfig.icon;
+
+  if (loading) {
+    return (
+      <div className="p-6 flex flex-col items-center">
+        <div className="w-24 h-24 rounded-full bg-gray-100 animate-pulse mb-4" />
+        <div className="h-4 w-32 bg-gray-100 rounded animate-pulse mb-2" />
+        <div className="h-3 w-48 bg-gray-100 rounded animate-pulse" />
+      </div>
+    );
+  }
 
   return (
-    <Card className="text-center relative">
-      <div className="absolute top-4 right-4">
-        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${profile.status === "Active" || profile.status === "approved"
-          ? "bg-green-100 text-green-700"
-          : profile.status === "rejected"
-            ? "bg-red-100 text-red-700"
-            : "bg-yellow-100 text-yellow-700"
-          }`}>
-          {profile.status === "Active" ? "Verified" :
-            profile.status === "approved" ? "Approved" :
-              profile.status === "rejected" ? "Rejected" : "Pending Verification"}
-        </span>
-      </div>
-      <div className="flex flex-col items-center">
-        {/* <p>{profile.photoUrl}</p> */}
-        <div className="relative">
-          <ProgressRing percent={completion} size={120} stroke={8}>
+    <div className="w-full">
+      {/* Mobile-Friendly Layout Container */}
+      <div className="flex flex-col items-center text-center px-4 w-full">
 
+        {/* Top Section: Status & Image */}
+        <div className="relative mb-6">
+          {/* Status Badge - Floating or Inline? User likes clean. Let's keep status badge nearby or remove if redundant */}
+          {/* Moving status badge to top-right of container was previous design, sticking to cleaner centered layout */}
 
+          <ProgressRing percent={completion}>
             {profile.photoUrl ? (
-              <img src={profile.photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-sm">
+                <img
+                  src={profile.photoUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=3b82f6&color=fff&size=96`;
+                  }}
+                />
+              </div>
             ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-full">
-                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+              <div className="w-24 h-24 rounded-full bg-gray-50 border-4 border-white flex items-center justify-center shadow-sm">
+                <span className="text-3xl font-semibold text-gray-300">
+                  {(profile.name || user?.name || 'U').charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
           </ProgressRing>
 
-          {/* Verified Badge */}
-          {(profile.status === "Active" || profile.status === "approved") && (
-            <div className="absolute bottom-0 right-0 bg-green-600 rounded-full p-2 shadow-lg border-2 border-white">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
+          {/* Upload Button */}
+          <button
+            onClick={() => photoInputRef.current?.click()}
+            disabled={uploading}
+            className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-md border hover:bg-gray-50 transition-colors disabled:opacity-75 z-10"
+          >
+            {uploading ? (
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Camera className="w-4 h-4 text-gray-600" />
+            )}
+          </button>
+
+          <input
+            ref={photoInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])}
+          />
+        </div>
+
+        {/* Profile Info */}
+        <div className="mb-6 w-full max-w-sm">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1 truncate">
+            {profile.name || user?.name || "Your Name"}
+          </h2>
+
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConfig.color}`}>
+              <StatusIcon className="w-3.5 h-3.5" />
+              {statusConfig.label}
+            </span>
+          </div>
+
+          {(profile.title || profile.company) && (
+            <p className="text-sm text-gray-500 font-medium truncate">
+              {profile.title}{profile.title && profile.company && " at "}{profile.company}
+            </p>
           )}
-        </div>
 
-        <div className="mt-4 text-xl font-semibold text-gray-900">
-          {profile.name || fallbackName || "Your Name"}
-        </div>
-
-        <div className="text-lg text-blue-600 mt-1">
-          {profile.title || "Your Title"}
-        </div>
-
-        <div className="text-sm text-gray-500 mt-1">
-          {profile.company || "Company"}
-        </div>
-
-        <div className="mt-6 w-full">
-          <input ref={photoInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files && handlePhotoUpload(e.target.files[0])} />
-          <SecondaryButton onClick={() => photoInputRef.current?.click()} disabled={uploading || loading} className="w-full">
-            {uploading ? "Uploading..." : "Change Photo"}
-          </SecondaryButton>
-        </div>
-
-        <div className="mt-5 text-sm font-medium text-gray-700">
-          {completion}% complete
-          {completion >= 100 ? (
-            <div className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <span className="text-green-600 font-bold block mb-1">🎉 Profile Completed!</span>
-              <button
-                onClick={() => navigate("/dashboard/profile")}
-                className="text-blue-600 hover:text-blue-800 text-xs underline decoration-blue-300 underline-offset-4"
-              >
-                View Profile Settings
-              </button>
+          {/* Progress Bar Label */}
+          <div className="mt-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center text-xs text-gray-500 font-medium uppercase tracking-wider">
+              <span>Profile Completion</span>
+              <span className="text-blue-600">{completion}%</span>
             </div>
-          ) : (
-            <div className={`mt-3 border rounded p-2 animate-in fade-in slide-in-from-bottom-2 duration-500 text-left ${profile.status === "rejected" ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}>
-              <div className="flex items-center gap-2 mb-1 justify-center">
-                <span className={`text-xs ${profile.status === "rejected" ? "text-red-500" : "text-amber-500"}`}>
-                  {profile.status === "rejected" ? "🚫" : "⚠️"}
-                </span>
-                <span className={`font-semibold text-xs text-center ${profile.status === "rejected" ? "text-red-700" : "text-amber-700"}`}>
-                  {profile.status === "rejected" ? "Application Rejected" : "Action Required"}
-                </span>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${completion}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Action Required Section */}
+        {completion < 100 && (
+          <div className="w-full max-w-md bg-amber-50/50 rounded-xl border border-amber-100 p-4 md:p-6 mb-2">
+            {profile.status === "rejected" ? (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-3 text-red-600">
+                  <XCircle className="w-5 h-5" />
+                  <h4 className="font-semibold">Updates Required</h4>
+                </div>
+                <p className="text-sm text-red-600/90 mb-4 bg-red-50 p-3 rounded-lg border border-red-100">
+                  {profile.rejectionReason || "Please update your profile information as requested."}
+                </p>
+                <button
+                  onClick={handleResubmit}
+                  disabled={loading}
+                  className="w-full py-2.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-sm"
+                >
+                  {loading ? "Submitting..." : "Resubmit Profile"}
+                </button>
               </div>
-
-              {profile.status === "rejected" ? (
-                <>
-                  <p className="text-xs text-red-600 leading-relaxed text-center mb-2">
-                    {profile.rejectionReason || "Your application was rejected. Please review your profile and update accordingly."}
-                  </p>
-                  <div className="flex justify-center mt-3">
-                    <button
-                      onClick={handleResubmit}
-                      className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
-                    >
-                      Resubmit Application
-                    </button>
+            ) : (
+              missingSections.length > 0 && (
+                <div className="w-full">
+                  <div className="mb-2 flex items-center justify-center gap-2 text-amber-700">
+                    <AlertCircle className="w-5 h-5" />
+                    <h4 className="font-semibold">Complete Your Profile</h4>
                   </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs text-amber-600 leading-relaxed text-center mb-2">
-                    Please complete the following sections to get verified:
-                  </p>
-                  <ul className="text-xs text-amber-700 list-disc pl-8 space-y-0.5">
-                    {missingSections.length > 0 ? (
-                      missingSections.map((section, idx) => {
-                        const tabMap: Record<string, string> = {
-                          "Personal Information": "personal",
-                          "Education": "education",
-                          "Professional Details": "profession",
-                          "Skills & Expertise": "profession",
-                          "Availability": "availability",
-                          "Profile Photo": "overview",
-                          "Verification Documents": "verification"
-                        };
-                        const targetTab = tabMap[section] || "overview";
 
-                        return (
-                          <li key={idx} className="font-medium">
-                            {onNavigate ? (
-                              <button
-                                onClick={() => onNavigate(targetTab)}
-                                className="underline hover:text-amber-900 text-left"
-                              >
-                                {section}
-                              </button>
-                            ) : (
-                              <span>{section}</span>
-                            )}
-                          </li>
-                        );
-                      })
-                    ) : (
-                      <li>Complete all profile details</li>
-                    )}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+                  <Stepper
+                    initialStep={1}
+                    // Disable indicators as requested "below the step no need"
+                    disableStepIndicators={true}
+                    onFinalStepCompleted={() => { }}
+                    backButtonText="Back"
+                    nextButtonText="Next"
+                    // Customize classes for clean look
+                    stepCircleContainerClassName="shadow-none border-0 bg-transparent"
+                    stepContainerClassName="hidden" // Hides visual step container completely if indicators disabled
+                    contentClassName="px-0 py-2 text-center"
+                    footerClassName="px-0 pb-0 pt-2 flex justify-center w-full"
+                    backButtonProps={{ className: "px-4 py-2 text-sm text-gray-500 hover:text-gray-800 font-medium" }}
+                    nextButtonProps={{ className: "px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-full shadow-sm hover:bg-blue-700 transition-colors ml-auto" }}
+                  >
+                    {missingSections.map((section, idx) => {
+                      const tabMap: Record<string, string> = {
+                        "Personal Information": "personal",
+                        "Education": "education",
+                        "Professional Details": "profession",
+                        "Skills & Expertise": "profession",
+                        "Availability": "availability",
+                        "Profile Photo": "overview",
+                        "Verification Documents": "verification"
+                      };
+                      const targetTab = tabMap[section] || "overview"; // simpler fallback
 
+                      return (
+                        <Step key={idx}>
+                          <div className="flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
+                            {/* Reduced text size for mobile */}
+                            <h3 className="text-base font-semibold text-gray-900 mb-1">
+                              {section}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-4 max-w-[250px] mx-auto">
+                              This section is required for verification.
+                            </p>
 
-        {error && (
-          <div className="mt-3 text-xs text-red-600 flex flex-col items-center">
-            <div>{error}</div>
-            <button className="mt-2 text-sm underline text-blue-600" onClick={() => fetchProfile()} disabled={loading}>Retry</button>
+                            <button
+                              onClick={() => onNavigate?.(targetTab)}
+                              className="inline-flex items-center justify-center rounded-lg bg-white border border-gray-200 px-5 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-all shadow-sm w-full sm:w-auto"
+                            >
+                              Go to {section} &rarr;
+                            </button>
+                          </div>
+                        </Step>
+                      );
+                    })}
+                  </Stepper>
+                </div>
+              )
+            )}
           </div>
         )}
 
-        {loading && <div className="mt-3 text-xs text-gray-500">Loading profile...</div>}
-      </div >
-    </Card >
+        {/* Completed State */}
+        {completion >= 100 && (
+          <div className="w-full max-w-sm mt-4 p-6 bg-green-50 border border-green-200 rounded-xl text-center">
+            <div className="inline-flex p-3 bg-green-100 rounded-full mb-3">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <h4 className="font-semibold text-green-800 mb-1">All Set!</h4>
+            <p className="text-sm text-green-600/90 mb-4">
+              Your profile is complete and pending verification.
+            </p>
+            <button
+              onClick={() => navigate("/dashboard/profile")}
+              className="w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+            >
+              View Profile Settings
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
-};
+});
+
+ExpertProfileHeader.displayName = "ExpertProfileHeader";
 
 export default ExpertProfileHeader;

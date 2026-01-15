@@ -78,13 +78,13 @@ const expertSchema = new mongoose.Schema(
     profileImage: { type: String, trim: true },
 
     personalInformation: {
-      userName: { type: String, required: true, trim: true },
-      mobile: { type: String, required: true, trim: true },
-      gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male", required: true, trim: true },
-      dob: { type: Date, required: true },
-      country: { type: String, required: true, trim: true },
-      state: { type: String, required: true, trim: true },
-      city: { type: String, required: true, trim: true },
+      userName: { type: String, trim: true },
+      mobile: { type: String, trim: true },
+      gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male", trim: true },
+      dob: { type: Date },
+      country: { type: String, trim: true },
+      state: { type: String, trim: true },
+      city: { type: String, trim: true },
       /* 🔥 CATEGORY - Can only be set once (enforced in controller) */
       category: {
         type: String,

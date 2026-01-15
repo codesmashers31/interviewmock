@@ -478,7 +478,7 @@ const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
 
             {/* --- LEFT SIDEBAR (ADS/TIPS) --- */}
             {!hideLayout && (
-              <aside className="hidden xl:col-span-2 lg:col-span-3 lg:block">
+              <aside className="hidden xl:col-span-3 lg:col-span-3 lg:block">
                 <div className="sticky top-20 space-y-4">
                   <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm overflow-hidden relative group">
                     <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-blue-50 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
@@ -511,7 +511,7 @@ const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
             )}
 
             {/* --- MAIN CONTENT --- */}
-            <main className={`${hideLayout ? 'col-span-12' : 'col-span-12 lg:col-span-6 xl:col-span-7 space-y-6'}`}>
+            <main className={`${hideLayout ? 'col-span-12' : 'col-span-12 lg:col-span-6 xl:col-span-6 space-y-6'}`}>
 
               {/* Header Card */}
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">

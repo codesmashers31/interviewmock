@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "../lib/axios";
+import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Plus, FolderKanban, Banknote } from "lucide-react";
 
@@ -125,7 +126,7 @@ const CategoriesPanel = () => {
       toast.success("Category added successfully");
     } catch (error: any) {
       console.error("Error adding category:", error);
-      if (axios.isAxiosError(error)) {
+      if (isAxiosError(error)) {
         toast.error(error.response?.data?.message || "Failed to add category");
       } else {
         toast.error("Failed to add category");

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from '../lib/axios';
 import { toast } from "sonner";
-import { Card, IconButton, PrimaryButton, SecondaryButton } from '../pages/ExpertDashboard';
+import { PrimaryButton } from '../pages/ExpertDashboard';
 
 
 interface Slot {
@@ -219,132 +219,167 @@ const ExpertAvailability = () => {
 
   return (
     <>
-      <Card>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-blue-800">Availability & Scheduling</h3>
-            <p className="text-sm text-gray-500 mt-1">Weekly slots, session duration and break dates</p>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-full flex flex-col overflow-hidden">
+        {/* Fixed Header */}
+        <div className="p-6 border-b border-gray-100 bg-white shrink-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Availability & Scheduling</h3>
+              <p className="text-sm text-gray-500 mt-1">Manage your weekly slots and break dates</p>
+            </div>
+            <PrimaryButton onClick={saveAvailability}>Save Changes</PrimaryButton>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Session Duration</label>
-              <select
-                className="border border-gray-300 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={profile.availability.sessionDuration || 30}
-                onChange={(e) => {
-                  const newDuration = Number(e.target.value);
-                  setProfile((p) => {
-                    // Update all existing slots with new end times
-                    const weekly = { ...p.availability.weekly };
-                    Object.keys(weekly).forEach(day => {
-                      weekly[day] = weekly[day].map(slot => ({
-                        ...slot,
-                        to: slot.from ? calculateEndTime(slot.from, newDuration) : slot.to
-                      }));
-                    });
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+          <div className="space-y-8">
+            {/* Session Duration & Max Limits */}
+            <section className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex flex-wrap items-center gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Session Duration</label>
+                  <select
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-700"
+                    value={profile.availability.sessionDuration || 30}
+                    onChange={(e) => {
+                      const newDuration = Number(e.target.value);
+                      setProfile((p) => {
+                        const weekly = { ...p.availability.weekly };
+                        Object.keys(weekly).forEach(day => {
+                          weekly[day] = weekly[day].map(slot => ({
+                            ...slot,
+                            to: slot.from ? calculateEndTime(slot.from, newDuration) : slot.to
+                          }));
+                        });
+                        return { ...p, availability: { ...p.availability, sessionDuration: newDuration, weekly } };
+                      });
+                    }}
+                  >
+                    <option value={30}>30 minutes</option>
+                    <option value={60}>60 minutes</option>
+                  </select>
+                </div>
 
-                    return {
-                      ...p,
-                      availability: {
-                        ...p.availability,
-                        sessionDuration: newDuration,
-                        weekly
-                      }
-                    };
-                  });
-                }}
-              >
-                <option value={30}>30 minutes</option>
-                <option value={60}>60 minutes</option>
-              </select>
-            </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max Sessions / Day</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2 w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-700"
+                    value={profile.availability.maxPerDay || 1}
+                    onChange={(e) => setProfile((p) => ({ ...p, availability: { ...p.availability, maxPerDay: Number(e.target.value) } }))}
+                  />
+                </div>
+              </div>
+            </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Max Sessions / Day</label>
-              <input type="number" min="1" className="border border-gray-300 rounded-md px-3 py-2.5 w-28 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={profile.availability.maxPerDay || 1} onChange={(e) => setProfile((p) => ({ ...p, availability: { ...p.availability, maxPerDay: Number(e.target.value) } }))} />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Weekly Availability</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {days.map((d) => (
-                <div key={d} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="font-medium text-gray-900">{dayLabel[d]}</div>
-                    <SecondaryButton onClick={() => addSlotForDay(d)}>+ Slot</SecondaryButton>
-                  </div>
-
-                  {(profile.availability.weekly[d] || []).length === 0 ? (
-                    <div className="text-sm text-gray-500 text-center py-4">No slots</div>
-                  ) : (
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                      {(profile.availability.weekly[d] || []).map((slot, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <label className="block text-xs text-gray-500 mb-1">Start Time</label>
-                            <input
-                              type="time"
-                              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-                              value={slot.from || ""}
-                              onChange={(e) => updateSlotForDay(d, i, "from", e.target.value)}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-xs text-gray-500 mb-1">End Time</label>
-                            <input
-                              type="time"
-                              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full bg-gray-50"
-                              value={slot.to || ""}
-                              readOnly
-                              title="Automatically calculated based on start time and session duration"
-                            />
-                          </div>
-                          <IconButton onClick={() => removeSlotForDay(d, i)} className="self-end mb-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </IconButton>
-                        </div>
-                      ))}
+            {/* Weekly Availability Grid */}
+            <section>
+              <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                Weekly Availability
+              </h4>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {days.map((d) => (
+                  <div key={d} className="border border-gray-200 rounded-xl p-4 hover:border-blue-200 transition-colors bg-white">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
+                      <div className="font-bold text-gray-900 capitalize">{dayLabel[d]}</div>
+                      <button
+                        onClick={() => addSlotForDay(d)}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                      >
+                        + Add Slot
+                      </button>
                     </div>
+
+                    {(profile.availability.weekly[d] || []).length === 0 ? (
+                      <div className="text-sm text-gray-400 text-center py-6 italic">Unavailable</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {(profile.availability.weekly[d] || []).map((slot, i) => (
+                          <div key={i} className="flex items-end gap-2 group">
+                            <div className="flex-1">
+                              <label className="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Start</label>
+                              <input
+                                type="time"
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full"
+                                value={slot.from || ""}
+                                onChange={(e) => updateSlotForDay(d, i, "from", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <label className="block text-[10px] font-bold text-gray-400 mb-1 uppercase">End</label>
+                              <input
+                                type="time"
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 w-full text-gray-500 cursor-not-allowed"
+                                value={slot.to || ""}
+                                readOnly
+                                tabIndex={-1}
+                              />
+                            </div>
+                            <button
+                              onClick={() => removeSlotForDay(d, i)}
+                              className="mb-1 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remove slot"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Break Dates */}
+            <section>
+              <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-purple-600 rounded-full"></span>
+                Blocked Dates
+              </h4>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative">
+                    <input
+                      id="breakDateInput"
+                      type="date"
+                      className="pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+                    />
+                  </div>
+                  <PrimaryButton onClick={() => {
+                    const el = document.getElementById("breakDateInput") as HTMLInputElement;
+                    if (el?.value) addBreakDate(el.value);
+                  }}>
+                    Block Date
+                  </PrimaryButton>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {profile.availability.breakDates?.length === 0 && (
+                    <div className="text-sm text-gray-400 italic">No dates blocked yet.</div>
                   )}
+                  {profile.availability.breakDates?.map((d, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-white border border-gray-200 pl-3 pr-2 py-1.5 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                      {new Date(d.start).toLocaleDateString()}
+                      <button
+                        onClick={() => removeBreakDate(i)}
+                        className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Unavailable / Break Dates</h4>
-            <div className="flex items-center gap-4 mb-4">
-              <input id="breakDateInput" type="date" className="border border-gray-300 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-              <SecondaryButton onClick={() => {
-                const el = document.getElementById("breakDateInput") as HTMLInputElement;
-                if (el?.value) addBreakDate(el.value);
-              }}>
-                Add Break Date
-              </SecondaryButton>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {profile.availability.breakDates?.length === 0 && <div className="text-sm text-gray-500">No break dates</div>}
-              {profile.availability.breakDates?.map((d, i) => (
-                <div key={i} className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-sm font-medium">
-                  {new Date(d.start).toLocaleDateString()}
-                  <button onClick={() => removeBreakDate(i)} className="text-gray-500 hover:text-gray-700 ml-1 transition-colors duration-200">×</button>
-                </div>
-              ))}
-            </div>
+              </div>
+            </section>
           </div>
         </div>
-
-        <div className="mt-6 flex justify-end">
-          <PrimaryButton onClick={saveAvailability}>Save Changes</PrimaryButton>
-        </div>
-      </Card>
+      </div>
     </>
   );
 };

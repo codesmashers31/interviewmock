@@ -41,7 +41,8 @@ interface Props { children: ReactNode; }
 export const AuthProvider: React.FC<Props> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Initialize loading based on whether we think the user is logged in
+  const [isLoading, setIsLoading] = useState<boolean>(!!localStorage.getItem('isLoggedIn'));
 
   // Attach token to axios defaults if present
   useEffect(() => {
@@ -63,6 +64,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     } catch (error) {
       setToken(null);
       setUser(null);
+      localStorage.removeItem('isLoggedIn'); // Clear hint if refresh fails
       throw error;
     }
   };
@@ -101,6 +103,12 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   // Check auth status on app load (Silent Login)
   useEffect(() => {
     const init = async () => {
+      // Optimization: If no auth hint, skip API calls and load as guest immediately
+      if (!localStorage.getItem('isLoggedIn')) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         await refreshAccessToken(); // First try to get a fresh token using cookie
         await fetchProfile(); // Then fetch user profile
@@ -108,6 +116,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         // Not logged in or expired
         setToken(null);
         setUser(null);
+        localStorage.removeItem('isLoggedIn');
       } finally {
         setIsLoading(false);
       }
@@ -143,6 +152,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
       if (!accessToken || !userData) throw new Error('Invalid response from server');
 
       setToken(accessToken);
+      localStorage.setItem('isLoggedIn', 'true'); // Set auth hint
 
       // Normalize userId to id for consistency
       const normalizedUser: User = {
@@ -161,7 +171,13 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   const register = async (email: string, password: string, userType: string, name: string, googleId?: string) => {
     try {
-      await axios.post('/api/auth/register', { email, password, userType, name, googleId });
+      const res = await axios.post('/api/auth/register', { email, password, userType, name, googleId });
+      // If registration auto-logs in (depends on backend), set hint. 
+      // Assuming standard flow requires login after, but if backend returns token here, set it.
+      // For safety/standard pattern, we usually wait for login, but if your flow is auto-login:
+      if (res.data?.accessToken) {
+        localStorage.setItem('isLoggedIn', 'true');
+      }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
     }
@@ -175,6 +191,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     } finally {
       setUser(null);
       setToken(null);
+      localStorage.removeItem('isLoggedIn'); // Clear auth hint
       delete axios.defaults.headers.common['Authorization'];
     }
   };

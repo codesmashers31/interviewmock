@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from '../lib/axios';
 import { toast } from "sonner";
-import { Card, MultiSelect, PrimaryButton } from "../pages/ExpertDashboard";
-import { useAuth } from "../context/AuthContext";
+import { MultiSelect, PrimaryButton } from "../pages/ExpertDashboard";
+
 
 const SkillsAndExpertise = () => {
-  const { user } = useAuth();
+
 
   const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -110,76 +110,91 @@ const SkillsAndExpertise = () => {
   };
 
   return (
-    <Card>
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-blue-800">Skills & Expertise</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Interview modes, domains, tools and languages
-          </p>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-full flex flex-col overflow-hidden">
+      {/* Fixed Header */}
+      <div className="p-6 border-b border-gray-100 bg-white shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Skills & Expertise</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Interview modes, domains, tools and languages
+            </p>
+          </div>
+          <PrimaryButton onClick={saveSkills}>Save Changes</PrimaryButton>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Interview Mode */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Interview Mode
-          </label>
-          <select
-            className="w-full border border-gray-300 rounded-md px-3 py-2.5 
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={profile.skills.mode}
-            onChange={(e) =>
-              setProfile((p) => ({
-                ...p,
-                skills: { ...p.skills, mode: e.target.value },
-              }))
-            }
-          >
-            <option value="">Select mode</option>
-            <option value="Online">Online</option>
-            <option value="Offline">Offline</option>
-            <option value="Hybrid">Hybrid</option>
-          </select>
-        </div>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-6 min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+          {/* Interview Mode */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 md:col-span-2">
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+              Interview Mode
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              value={profile.skills.mode}
+              onChange={(e) =>
+                setProfile((p) => ({
+                  ...p,
+                  skills: { ...p.skills, mode: e.target.value },
+                }))
+              }
+            >
+              <option value="">Select mode</option>
+              <option value="Online">Online</option>
+              <option value="Offline">Offline</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </div>
 
-        {/* Domains / Categories */}
-        <div className="md:col-span-2">
-          <MultiSelect
-            label="Category *"
-            value={profile.skills.domains}
-            onChange={(values) => updateSkillsArray("domains", values)}
-            options={categoryOptions}
-            placeholder="Select Categories..."
-          />
-        </div>
+          {/* Domains / Categories */}
+          <div className="md:col-span-2">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+              Expertise Areas
+            </h4>
+            <MultiSelect
+              label="Selected Categories"
+              value={profile.skills.domains}
+              onChange={(values) => updateSkillsArray("domains", values)}
+              options={categoryOptions}
+              placeholder="Select Categories..."
+            />
+          </div>
 
-        {/* Tools */}
-        <div className="md:col-span-2">
-          <MultiSelect
-            label="Tools Known"
-            value={profile.skills.tools}
-            onChange={(values) => updateSkillsArray("tools", values)}
-            options={TOOL_OPTIONS}
-          />
-        </div>
+          {/* Tools */}
+          <div className="md:col-span-2">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-green-600 rounded-full"></span>
+              Tools & Technologies
+            </h4>
+            <MultiSelect
+              label="Tools Known"
+              value={profile.skills.tools}
+              onChange={(values) => updateSkillsArray("tools", values)}
+              options={TOOL_OPTIONS}
+            />
+          </div>
 
-        {/* Languages */}
-        <div className="md:col-span-2">
-          <MultiSelect
-            label="Languages"
-            value={profile.skills.languages}
-            onChange={(values) => updateSkillsArray("languages", values)}
-            options={LANGUAGE_OPTIONS}
-          />
+          {/* Languages */}
+          <div className="md:col-span-2">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-purple-600 rounded-full"></span>
+              Languages
+            </h4>
+            <MultiSelect
+              label="Languages Spoken"
+              value={profile.skills.languages}
+              onChange={(values) => updateSkillsArray("languages", values)}
+              options={LANGUAGE_OPTIONS}
+            />
+          </div>
         </div>
       </div>
-
-      <div className="mt-6 flex justify-end">
-        <PrimaryButton onClick={saveSkills}>Save</PrimaryButton>
-      </div>
-    </Card>
+    </div>
   );
 };
 

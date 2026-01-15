@@ -4,20 +4,18 @@ import { Outlet } from "react-router-dom";
 import SideNav from "./SideNav";
 import TopNav from "./TopNav";
 
-export default function ExpertLayout({ active = "dashboard" }: { active?: string }) {
+export default function ExpertLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="flex">
-        <SideNav isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
+      <SideNav isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className="flex-1 min-h-screen">
-          <TopNav onOpenSidebar={() => setSidebarOpen(true)} />
-          <main className="p-6">
-            <Outlet />
-          </main>
-        </div>
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopNav onOpenSidebar={() => setSidebarOpen(true)} />
+        <main className="flex-1 p-4 lg:p-6 overflow-hidden">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
