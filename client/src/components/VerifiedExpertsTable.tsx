@@ -54,11 +54,28 @@ interface Expert {
   };
 }
 
+interface Session {
+  _id: string;
+  sessionId: string;
+  expertId: string;
+  candidateId: string;
+  expertName?: string;
+  candidateName?: string;
+  startTime: string;
+  endTime: string;
+  topics: string[];
+  price: number;
+  status: string;
+  duration?: number;
+  meetingLink?: string;
+}
+
 const VerifiedExpertsTable = () => {
   const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null);
   const [showSessions, setShowSessions] = useState<Expert | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [verifiedExperts, setVerifiedExperts] = useState<Expert[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Pagination State
@@ -80,38 +97,32 @@ const VerifiedExpertsTable = () => {
     }
   };
 
+  const fetchSessions = async () => {
+    try {
+      const response = await axios.get("/api/sessions/all");
+      if (response.data.success) {
+        const formattedSessions = response.data.data.map((session: any) => ({
+          ...session,
+          _id: session._id?.$oid || session._id,
+          startTime: session.startTime?.$date || session.startTime,
+          endTime: session.endTime?.$date || session.endTime,
+        }));
+        setSessions(formattedSessions);
+      }
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
   useEffect(() => {
     fetchVerifiedExperts();
+    fetchSessions(); // Fetch sessions too
   }, []);
 
   // Effect to reset pagination when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
-
-  // Sample sessions data (Dummy for now)
-  const sessionsData = [
-    {
-      expertId: "2",
-      user: "Pooja Sri",
-      date: "2025-12-15",
-      time: "10:00 AM - 11:00 AM",
-      duration: "1 hour",
-      mode: "Online",
-      status: "Completed",
-      amount: 1500,
-    },
-    {
-      expertId: "2",
-      user: "Ravi Kumar",
-      date: "2025-12-13",
-      time: "2:00 PM - 2:30 PM",
-      duration: "30 mins",
-      mode: "Offline",
-      status: "Completed",
-      amount: 800,
-    },
-  ];
 
   const filteredExperts = verifiedExperts.filter(exp =>
     exp.personalInformation.userName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -206,7 +217,7 @@ const VerifiedExpertsTable = () => {
                     {exp.personalInformation.city}
                   </td>
                   <td className="py-4 px-6 text-center text-gray-600 font-mono">
-                    {sessionsData.filter((s) => s.expertId === exp._id).length}
+                    {sessions.filter((s) => s.expertId === exp._id).length}
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end space-x-2">
@@ -466,26 +477,38 @@ const VerifiedExpertsTable = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {sessionsData.filter(s => s.expertId === showSessions._id).map((s, idx) => (
+                    {sessions.filter(s => s.expertId === showSessions._id).map((s, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
-                        <td className="py-3 px-4 text-sm text-gray-900">{s.user}</td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{s.date}</td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{s.time}</td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{s.duration}</td>
                         <td className="py-3 px-4">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${s.mode === 'Online' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-indigo-50 text-indigo-700 border-indigo-100'}`}>
-                            {s.mode}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-900">{s.candidateName || "Unknown"}</span>
+                            {(s as any).candidateDetails?.email && (
+                              <span className="text-xs text-gray-500">{(s as any).candidateDetails.email}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">{new Date(s.startTime).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">{s.duration ? `${s.duration} min` : "60 min"}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                            Online
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${s.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${s.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-100' :
+                            s.status === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
+                              'bg-yellow-50 text-yellow-700 border-yellow-100'
+                            }`}>
                             {s.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-sm font-medium text-gray-900">₹{s.amount}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-900">₹{s.price}</td>
                       </tr>
                     ))}
-                    {sessionsData.filter(s => s.expertId === showSessions._id).length === 0 && (
+                    {sessions.filter(s => s.expertId === showSessions._id).length === 0 && (
                       <tr>
                         <td colSpan={7} className="py-8 text-center text-sm text-gray-500">No sessions assigned yet</td>
                       </tr>

@@ -24,6 +24,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string, userType: string, name: string, googleId?: string) => Promise<void>;
+  googleLogin: (token: string) => Promise<any>;
   logout: () => void;
   isLoading: boolean;
   fetchProfile: () => Promise<User | null>;
@@ -129,11 +130,26 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
       const response = await axios.get('/api/auth/profile');
       const userData: User = response.data.user;
 
+      let expertData: any = {};
+      if (userData.userType === 'expert') {
+        try {
+          // Fetch expert profile to get specific photo if needed
+          const expertRes = await axios.get('/api/expert/profile');
+          if (expertRes.data?.success) {
+            expertData = expertRes.data.profile || {};
+          }
+        } catch (e) {
+          console.warn('Failed to fetch expert extra details', e);
+        }
+      }
+
       // Normalize userId or _id to id for consistency
       const normalizedUser: User = {
         ...userData,
         id: userData.userId || (userData as any)._id || userData.id,
         phone: userData.personalInfo?.phone || (userData as any).phone || userData.phone,
+        // Prefer expert photo if available, otherwise fallback
+        profileImage: expertData.photoUrl || userData.profileImage || (userData as any).photoUrl,
       };
 
       setUser(normalizedUser);
@@ -169,14 +185,51 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
+  const googleLogin = async (token: string): Promise<any> => {
+    try {
+      // Using /google-signup endpoint which handles both login (if exists) and verification (if new)
+      const response = await axios.post('/api/auth/google-signup', { token });
+      const { exists, accessToken, user: userData, googleData } = response.data;
+
+      if (exists && accessToken && userData) {
+        setToken(accessToken);
+        localStorage.setItem('isLoggedIn', 'true');
+
+        // Normalize userId to id for consistency
+        const normalizedUser: User = {
+          ...userData,
+          id: userData.userId || userData.id,
+          phone: (userData as any).personalInfo?.phone || (userData as any).phone || userData.phone,
+        };
+
+        setUser(normalizedUser);
+        return { success: true, user: normalizedUser };
+      } else {
+        return { success: false, googleData };
+      }
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Google Auth failed');
+    }
+  };
+
   const register = async (email: string, password: string, userType: string, name: string, googleId?: string) => {
     try {
       const res = await axios.post('/api/auth/register', { email, password, userType, name, googleId });
-      // If registration auto-logs in (depends on backend), set hint. 
-      // Assuming standard flow requires login after, but if backend returns token here, set it.
-      // For safety/standard pattern, we usually wait for login, but if your flow is auto-login:
-      if (res.data?.accessToken) {
+
+      const { accessToken, user: userData } = res.data;
+
+      if (accessToken && userData) {
+        setToken(accessToken);
         localStorage.setItem('isLoggedIn', 'true');
+
+        // Normalize userId to id for consistency
+        const normalizedUser: User = {
+          ...userData,
+          id: userData.userId || userData.id,
+          phone: (userData as any).personalInfo?.phone || (userData as any).phone || userData.phone,
+        };
+
+        setUser(normalizedUser);
       }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
@@ -196,7 +249,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
-  const value: AuthContextType = { user, token, login, register, logout, isLoading, fetchProfile };
+  const value: AuthContextType = { user, token, login, googleLogin, register, logout, isLoading, fetchProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

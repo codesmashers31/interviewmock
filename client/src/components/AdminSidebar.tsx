@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { ReactNode } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
     LogOut,
@@ -10,16 +10,25 @@ import {
     Layers,
     Flag
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export type NavItem = {
     id: string;
     label: string;
     to: string;
-    icon?: ReactNode;
+    icon: ReactNode;
     end?: boolean;
 };
 
 export default function AdminSidebar() {
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleSignOut = () => {
+        logout();
+        navigate("/signin", { replace: true });
+    };
+
     const items: NavItem[] = [
         { id: "dashboard", label: "Dashboard", to: "/admin", icon: <LayoutDashboard size={20} />, end: true },
         { id: "sessions", label: "Session Management", to: "/admin/sessions", icon: <ListCheck size={20} /> },
@@ -33,10 +42,10 @@ export default function AdminSidebar() {
 
     return (
         <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
-            <div className="flex items-center px-6 py-6 border-b border-gray-100 flex-shrink-0 relative overflow-visible">
-                <div className="flex items-center gap-0 font-bold text-[#004fcb] text-2xl font-['Outfit'] relative">
-                    <img src="/mockeefynew.png" alt="Mockeefy" className="absolute top-[-15px] left-[-10px] h-[70px] w-auto object-contain mix-blend-multiply" />
-                    <span className="ml-[60px]">Mockeefy Admin</span>
+            <div className="h-[80px] flex items-center px-6 border-b border-blue-100/50 overflow-hidden relative">
+                <div className="relative flex items-center w-full h-full">
+                    <img src="/mockeefynew.png" alt="Mockeefy" className="absolute left-[-28px] h-[90px] w-auto object-contain mix-blend-multiply" />
+                    <span className="ml-[52px] text-2xl font-bold tracking-tight text-[#004fcb] font-['Outfit']">Mockeefy</span>
                 </div>
             </div>
 
@@ -51,8 +60,8 @@ export default function AdminSidebar() {
                         to={item.to}
                         end={item.end}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-none ${isActive
-                                ? 'bg-gray-900 text-white shadow-sm'
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${isActive
+                                ? 'bg-[#004fcb] text-white shadow-sm'
                                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                             }`
                         }
@@ -70,7 +79,7 @@ export default function AdminSidebar() {
             </div>
 
             <div className="p-4 border-t border-gray-100 flex-shrink-0">
-                <button className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-none">
+                <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <LogOut size={20} />
                     <span>Sign Out</span>
                 </button>

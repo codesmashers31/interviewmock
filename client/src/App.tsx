@@ -18,6 +18,7 @@ import ProfilePage from "./pages/expert/Profile";
 import SessionsPage from "./pages/expert/Sessions";
 import AvailabilityPage from "./pages/expert/Availability";
 import SkillsPage from "./pages/expert/Skills";
+import SettingsPage from "./pages/expert/Settings";
 import LiveMeeting from "./pages/LiveMeeting";
 import ScrollToTop from "./ScrollToTop";
 import UserProfile from "./pages/UserProfile";
@@ -97,6 +98,7 @@ function AppRoutes() {
             <Route path="sessions" element={<SessionsPage />} />
             <Route path="availability" element={<AvailabilityPage />} />
             <Route path="skills" element={<SkillsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
 

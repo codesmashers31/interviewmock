@@ -150,45 +150,95 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// Verify Google Token and prepare for signup
+// Verify Google Token (ID Token or Access Token)
 export const verifyGoogleToken = async (req, res) => {
-  const { token, userType } = req.body;
+  const { token } = req.body;
 
   if (!token) {
-    return res.status(400).json({ message: "Google ID token is required" });
+    return res.status(400).json({ message: "Google token is required" });
   }
 
+  let googleId, email, name, picture;
+
   try {
+    // 1. Try as ID Token
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-
     const payload = ticket.getPayload();
-    const { sub: googleId, email, name, picture } = payload;
+    googleId = payload.sub;
+    email = payload.email;
+    name = payload.name;
+    picture = payload.picture;
+  } catch (idTokenError) {
+    // 2. Try as Access Token
+    try {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
+      if (!response.ok) throw new Error('Failed to verify access token');
+
+      const payload = await response.json();
+      googleId = payload.sub;
+      email = payload.email;
+      name = payload.name;
+      picture = payload.picture;
+    } catch (accessTokenError) {
+      return res.status(401).json({ message: "Invalid Google token" });
+    }
+  }
+
+  try {
     // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ googleId }, { email: email.toLowerCase() }]
     });
+    // ... rest of logic ...
 
     if (existingUser) {
-      // If user exists, we logic them in (this covers Google login too)
-      // For now, let's treat this as a "verified signup attempt"
-      // If they exist, we just return their info so frontend can log them in
-      // or tell them "Account exists, please sign in"
+      // User exists, log them in
+      const accessToken = jwt.sign(
+        {
+          email: existingUser.email,
+          userType: existingUser.userType,
+          name: existingUser.name,
+          userId: existingUser._id
+        },
+        JWT_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: existingUser._id },
+        REFRESH_TOKEN_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      res.cookie('jwt', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
       return res.status(200).json({
         exists: true,
-        message: "User already exists",
+        message: "Login successful",
+        accessToken,
         user: {
           email: existingUser.email,
+          userType: existingUser.userType,
           name: existingUser.name,
-          userType: existingUser.userType
+          userId: existingUser._id,
+          personalInfo: existingUser.personalInfo,
+          profileImage: existingUser.profileImage
         }
       });
     }
 
-    // Return verification success and user info for step 3
+    // Return verification success and user info for step 3 (Signup)
     res.status(200).json({
       exists: false,
       message: "Google token verified successfully",
@@ -241,7 +291,43 @@ export const registerUser = async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    // Generate tokens for auto-login
+    const accessToken = jwt.sign(
+      {
+        email: newUser.email,
+        userType: newUser.userType,
+        name: newUser.name,
+        userId: newUser._id
+      },
+      JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: newUser._id },
+      REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.cookie('jwt', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(201).json({
+      message: "User registered successfully",
+      accessToken,
+      user: {
+        email: newUser.email,
+        userType: newUser.userType,
+        name: newUser.name,
+        userId: newUser._id,
+        personalInfo: newUser.personalInfo,
+        profileImage: newUser.profileImage
+      }
+    });
   } catch (error) {
     console.error("Error registering user:", error);
     res.status(500).json({ message: "Error registering user", error: error.message });

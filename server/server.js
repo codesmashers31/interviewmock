@@ -23,6 +23,7 @@ import adminRoutes from './routes/adminRoutes.js';
 
 
 import categoryRoutes from "./routes/categoryRoutes.js";
+import aiSessionRoutes from "./routes/aiSessionRoutes.js";
 
 await connectDB();
 // Seeding on startup
@@ -78,6 +79,7 @@ app.use("/api/user", userProfileRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/ai-interview', aiSessionRoutes);
 app.use('/api/admin/users', userAdminRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);

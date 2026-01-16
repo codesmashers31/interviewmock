@@ -19,30 +19,55 @@ import axios from '../lib/axios';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImageUrl } from "../lib/imageUtils";
+import { useUserProfile } from "../hooks/useUserProfile";
 
 const Sidebar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null);
   const [nextSession, setNextSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
 
-  // Fetch Profile and Sessions
+  const { data: userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const profileData = userProfile?.data;
+
+  // Use derived loading state. If we have profileData (from cache/placeholder), we don't block on profile loading.
+  const loading = sessionsLoading && (!profileData && isProfileLoading);
+  // Actually, sidebar skeleton covers everything. 
+  // If we have profile but not sessions, do we show loading?
+  // Current logic: `if (loading && !profileData)` returns skeleton.
+  // So if I have profile data, I can show sidebar?
+  // But the sidebar has a "Next Session" part.
+  // If I show sidebar immediately with profile, session part might pop in?
+  // Use `loading` to control skeleton for whole sidebar or just parts?
+  // The skeleton covers whole sidebar.
+  // The user wants "very fast and never flicker".
+  // Best is to show profile immediately if available, and maybe skeleton for session part?
+  // Or just render session as null if loading?
+  // The current skeleton is full page.
+  // I will make `loading` depend on `!profileData`. If we have profile, show it!
+  // `sessionsLoading` can just affect the session card locally?
+  // But `Sidebar` code returns early if `loading && !profileData`.
+  // So if I set `loading` to `sessionsLoading`, it waits for sessions.
+  // I want to bypass wait if profile is ready.
+  // So `loading` should be `(!profileData && isProfileLoading)`.
+  // Sessions can load in background.
+  // But verify `Sidebar` render logic for sessions. 
+  // View file showed `Next Session` logic? I didn't see the render part fully.
+  // I'll stick to `const loading = !profileData;` basically.
+  // But `sessionsLoading` is needed for the session part?
+  // I'll keep the variable `sessionsLoading` available but maybe not force global loading.
+
+  // Actually, I'll just replicate the `fetchData` logic but for sessions only.
+
+  // Fetch Sessions
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSessions = async () => {
       if (user?.id) {
-        setLoading(true);
+        setSessionsLoading(true);
         try {
-          const [profileRes, sessionsRes] = await Promise.all([
-            axios.get("/api/user/profile", { headers: { userid: user.id } }),
-            axios.get(`/api/sessions/candidate/${user.id}`)
-          ]);
-
-          if (profileRes.data.success) {
-            setProfileData(profileRes.data.data);
-          }
+          const sessionsRes = await axios.get(`/api/sessions/candidate/${user.id}`);
 
           if (Array.isArray(sessionsRes.data)) {
             // Find the next upcoming session
@@ -56,13 +81,13 @@ const Sidebar = () => {
             }
           }
         } catch (error) {
-          console.error("Error fetching sidebar data:", error);
+          console.error("Error fetching sessions:", error);
         } finally {
-          setLoading(false);
+          setSessionsLoading(false);
         }
       }
     };
-    fetchData();
+    fetchSessions();
   }, [user?.id]);
 
   if (loading && !profileData) {

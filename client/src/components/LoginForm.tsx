@@ -7,6 +7,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent } from "./ui/card";
 import { useAuth } from "../context/AuthContext";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,7 +15,7 @@ export const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { login, user: ctxUser } = useAuth();
+  const { login, googleLogin, user: ctxUser } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -60,6 +61,33 @@ export const LoginForm = () => {
     }
   };
 
+  const handleGoogleSignIn = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const result = await googleLogin(tokenResponse.access_token);
+        if (result.success) {
+          const finalUser = result.user;
+          if (finalUser.userType === "expert") {
+            navigate("/dashboard", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
+        } else {
+          setError("Account not found. Please create an account.");
+        }
+      } catch (err: any) {
+        setError(err.message || "Google Sign In failed");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      setError("Google Sign In failed");
+    }
+  });
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4 font-sans">
       <div className="w-full max-w-sm"> {/* max-w-sm for tighter fit */}
@@ -73,9 +101,9 @@ export const LoginForm = () => {
                 <img
                   src="/mockeefynew.png"
                   alt="Mockeefy"
-                  className="absolute top-[-20px] h-[100px] w-auto object-contain mix-blend-multiply -ml-[140px]"
+                  className="absolute h-[100px] w-auto object-contain mix-blend-multiply -ml-[140px]"
                 />
-                <span className="text-4xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] ml-[40px]">
+                <span className="text-4xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] ml-[40px] animate-fade-in">
                   Mockeefy
                 </span>
               </div>
@@ -173,6 +201,7 @@ export const LoginForm = () => {
               variant="outline"
               className="w-full h-10 rounded-md border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2 text-sm"
               type="button"
+              onClick={() => handleGoogleSignIn()}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

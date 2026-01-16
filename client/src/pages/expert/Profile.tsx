@@ -22,7 +22,6 @@ export default function ProfilePage() {
   const [active, setActive] = useState<string>("overview");
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [cachedStatus, setCachedStatus] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [missingSections, setMissingSections] = useState<string[]>([]);
 
@@ -40,7 +39,6 @@ export default function ProfilePage() {
         setMissingSections(res.data.missingSections || []);
 
         localStorage.setItem('profile_status', newStatus);
-        setCachedStatus(newStatus);
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
@@ -56,7 +54,6 @@ export default function ProfilePage() {
     const cached = localStorage.getItem('profile_status');
     if (cached) {
       setStatus(cached);
-      setCachedStatus(cached);
     }
 
     if (user) {
@@ -83,7 +80,7 @@ export default function ProfilePage() {
   const renderContent = () => {
     switch (active) {
       case "overview":
-        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} />;
+        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} onRefresh={fetchProfileData} />;
       case "personal":
         return <PersonalInfo />;
       case "education":
@@ -93,7 +90,7 @@ export default function ProfilePage() {
       case "verification":
         return <ExpertVerification />;
       default:
-        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} />;
+        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} onRefresh={fetchProfileData} />;
     }
   };
 

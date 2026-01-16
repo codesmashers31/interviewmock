@@ -20,9 +20,8 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
 
   const navigate = useNavigate();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // Removed local avatarUrl state to rely on global user context (flicker-free)
 
-  const [query, setQuery] = useState("");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -107,36 +106,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     navigate("/signin", { replace: true });
   };
 
-  useEffect(() => {
-    if (!user) {
-      setAvatarUrl(null);
-      return;
-    }
 
-    const fetchProfile = async () => {
-      try {
-        const res = await axios.get("/api/expert/profile");
-
-
-
-
-        if (res.data?.success) {
-          const url = res.data.profile?.photoUrl || "";
-
-
-
-          setAvatarUrl(url || null);
-        } else {
-          setAvatarUrl(null);
-        }
-      } catch (err) {
-        console.error("Failed to load expert profile", err);
-        setAvatarUrl(null);
-      }
-    };
-
-    fetchProfile();
-  }, [user]);
 
 
   // Small helper to render icons
@@ -169,10 +139,10 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     }
   };
 
-  const avatarSrc = getProfileImageUrl(avatarUrl || user?.profileImage);
+  const avatarSrc = getProfileImageUrl(user?.profileImage || (user as any)?.photoUrl);
 
   return (
-    <header className="w-full bg-white border-b border-gray-200 p-3 flex items-center justify-between sticky top-0 z-50">
+    <header className="h-[80px] w-full bg-white border-b border-blue-100/50 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm">
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenSidebar}
@@ -184,21 +154,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
           </svg>
         </button>
 
-        <div className="hidden sm:block relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search experts, sessions..."
-            className="border border-gray-200 rounded-md pl-10 pr-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            aria-label="Search"
-          />
-        </div>
+
       </div>
 
       <div className="flex items-center gap-4">

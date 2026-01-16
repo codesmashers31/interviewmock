@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImageUrl } from "../lib/imageUtils";
+import { useUserProfile } from "../hooks/useUserProfile";
 
 interface Notification {
   _id: string;
@@ -39,7 +40,7 @@ const Navigation = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  // profileImage state removed, derived from hook
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -51,26 +52,8 @@ const Navigation = () => {
   const location = useLocation();
 
   const { user, logout } = useAuth();
-
-  // Fetch user profile image
-  useEffect(() => {
-    const fetchProfileImage = async () => {
-      if (user?.id) {
-        try {
-          const response = await axios.get('/api/user/profile', {
-            headers: { userid: user.id }
-          });
-          const data = response.data;
-          if (data.success && data.data.profileImage) {
-            setProfileImage(getProfileImageUrl(data.data.profileImage));
-          }
-        } catch (error) {
-          console.error('Error fetching profile image:', error);
-        }
-      }
-    };
-    fetchProfileImage();
-  }, [user?.id]);
+  const { data: userProfile } = useUserProfile();
+  const profileImage = userProfile?.data?.profileImage || user?.profileImage;
 
   // Fetch Notifications
   const fetchNotifications = async () => {

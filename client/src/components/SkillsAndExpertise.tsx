@@ -6,8 +6,12 @@ import { MultiSelect, PrimaryButton } from "../pages/ExpertDashboard";
 
 const SkillsAndExpertise = () => {
 
+  const MODE_OPTIONS = [
+    { value: "Online", label: "Online" },
+    { value: "Offline", label: "Offline" },
+    { value: "Hybrid", label: "Hybrid" },
+  ];
 
-  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
 
   // DOMAIN_OPTIONS removed in favor of dynamic categoryOptions
 
@@ -26,6 +30,11 @@ const SkillsAndExpertise = () => {
     { value: "confluence", label: "Confluence" },
     { value: "slack", label: "Slack" },
     { value: "teams", label: "Microsoft Teams" },
+    { value: "vscode", label: "VS Code" },
+    { value: "intellij", label: "IntelliJ IDEA" },
+    { value: "eclipse", label: "Eclipse" },
+    { value: "pycharm", label: "PyCharm" },
+    { value: "visual-studio", label: "Visual Studio" },
   ];
 
   const LANGUAGE_OPTIONS = [
@@ -50,12 +59,14 @@ const SkillsAndExpertise = () => {
       languages: [],
     },
   });
+  const [isLoading, setIsLoading] = useState(true);
 
 
   // ------------------ Fetch existing (GET) ------------------
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         // Fetch skills
         const skillsRes = await axios.get("/api/expert/skills");
         setProfile((p) => ({
@@ -63,19 +74,12 @@ const SkillsAndExpertise = () => {
           skills: skillsRes.data?.data || { mode: "", domains: [], tools: [], languages: [] },
         }));
 
-        // Fetch Categories
-        const catRes = await axios.get("/api/categories");
-        if (Array.isArray(catRes.data)) {
-          console.log("Categories fetched:", catRes.data);
-          const options = catRes.data.map((cat: any) => ({
-            value: cat.name,
-            label: `${cat.name} - ₹${cat.amount}`
-          }));
-          setCategoryOptions(options);
-        }
+
 
       } catch (err: any) {
         console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -87,6 +91,16 @@ const SkillsAndExpertise = () => {
     setProfile((p) => ({
       ...p,
       skills: { ...p.skills, [field]: values },
+    }));
+  };
+
+  // ------------------ Mode updater ------------------
+  const updateMode = (values: string[]) => {
+    // Take the last selected value to simulate single select switch
+    const newMode = values.length > 0 ? values[values.length - 1] : "";
+    setProfile((p) => ({
+      ...p,
+      skills: { ...p.skills, mode: newMode },
     }));
   };
 
@@ -109,6 +123,14 @@ const SkillsAndExpertise = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-full flex flex-col overflow-hidden">
       {/* Fixed Header */}
@@ -125,62 +147,26 @@ const SkillsAndExpertise = () => {
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-6 min-h-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+      <div className="flex-1 overflow-y-auto p-6 min-h-0 pb-40">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto items-stretch">
           {/* Interview Mode */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 md:col-span-2">
-            <label className="block text-sm font-bold text-gray-900 mb-2">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-orange-500 rounded-full"></span>
               Interview Mode
-            </label>
-            <select
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              value={profile.skills.mode}
-              onChange={(e) =>
-                setProfile((p) => ({
-                  ...p,
-                  skills: { ...p.skills, mode: e.target.value },
-                }))
-              }
-            >
-              <option value="">Select mode</option>
-              <option value="Online">Online</option>
-              <option value="Offline">Offline</option>
-              <option value="Hybrid">Hybrid</option>
-            </select>
-          </div>
-
-          {/* Domains / Categories */}
-          <div className="md:col-span-2">
-            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-              Expertise Areas
             </h4>
             <MultiSelect
-              label="Selected Categories"
-              value={profile.skills.domains}
-              onChange={(values) => updateSkillsArray("domains", values)}
-              options={categoryOptions}
-              placeholder="Select Categories..."
-            />
-          </div>
-
-          {/* Tools */}
-          <div className="md:col-span-2">
-            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <span className="w-1 h-5 bg-green-600 rounded-full"></span>
-              Tools & Technologies
-            </h4>
-            <MultiSelect
-              label="Tools Known"
-              value={profile.skills.tools}
-              onChange={(values) => updateSkillsArray("tools", values)}
-              options={TOOL_OPTIONS}
+              label="Select Interaction Mode"
+              value={profile.skills.mode ? [profile.skills.mode] : []}
+              onChange={updateMode}
+              options={MODE_OPTIONS}
+              placeholder="Select mode..."
+              maxItems={1}
             />
           </div>
 
           {/* Languages */}
-          <div className="md:col-span-2">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
             <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-purple-600 rounded-full"></span>
               Languages
@@ -190,6 +176,37 @@ const SkillsAndExpertise = () => {
               value={profile.skills.languages}
               onChange={(values) => updateSkillsArray("languages", values)}
               options={LANGUAGE_OPTIONS}
+            />
+          </div>
+
+          {/* Domains / Categories */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+              Expertise Areas
+            </h4>
+            <MultiSelect
+              label="Selected Categories (Max 6)"
+              value={profile.skills.domains}
+              onChange={(values) => updateSkillsArray("domains", values)}
+              options={[]}
+              placeholder="Add Skills (e.g. React, Node)..."
+              maxItems={6}
+            />
+          </div>
+
+          {/* Tools */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
+            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-green-600 rounded-full"></span>
+              Tools & Technologies
+            </h4>
+            <MultiSelect
+              label="Tools & IDEs Known"
+              value={profile.skills.tools}
+              onChange={(values) => updateSkillsArray("tools", values)}
+              options={TOOL_OPTIONS}
+              dropUp={true}
             />
           </div>
         </div>

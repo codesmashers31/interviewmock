@@ -53,8 +53,8 @@ const ProgressRing = memo(({
 
 ProgressRing.displayName = "ProgressRing";
 
-const ExpertProfileHeader = memo(({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
-  const { user } = useAuth();
+const ExpertProfileHeader = memo(({ onNavigate, onRefresh }: { onNavigate?: (tab: string) => void; onRefresh?: () => void; }) => {
+  const { user, fetchProfile: refreshGlobalUser } = useAuth();
   const navigate = useNavigate();
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +126,10 @@ const ExpertProfileHeader = memo(({ onNavigate }: { onNavigate?: (tab: string) =
         }));
         // Refresh to get updated completion status
         fetchProfile();
+        // Sync global auth state so TopNav updates
+        refreshGlobalUser();
+        // Notify parent (ProfilePage) to refresh its state
+        onRefresh?.();
       }
     } catch (err: any) {
       console.error("Upload Error:", err);
@@ -142,6 +146,8 @@ const ExpertProfileHeader = memo(({ onNavigate }: { onNavigate?: (tab: string) =
       if (res.data.success) {
         toast.success("Profile resubmitted");
         fetchProfile();
+        refreshGlobalUser();
+        onRefresh?.();
       }
     } catch (err) {
       toast.error("Failed to resubmit");

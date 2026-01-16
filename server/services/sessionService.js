@@ -255,10 +255,18 @@ export const getAllSessions = async () => {
 
             const candidateName = candidate?.name || (typeof session.candidateId === 'string' ? session.candidateId : 'Candidate');
 
+            const candidateDetails = candidate ? {
+                name: candidate.name,
+                email: candidate.email,
+                profileImage: candidate.profileImage,
+                phone: candidate.phone
+            } : null;
+
             return {
                 ...session,
                 expertName,
                 candidateName,
+                candidateDetails,
                 topic: session.topics?.[0] || "General Consultation",
                 status: session.status,
                 amount: session.price,

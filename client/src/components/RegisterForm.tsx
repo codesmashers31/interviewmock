@@ -195,9 +195,9 @@ export const RegisterForm = () => {
                 <img
                   src="/mockeefynew.png"
                   alt="Mockeefy"
-                  className="absolute top-[-20px] h-[100px] w-auto object-contain mix-blend-multiply -ml-[140px]"
+                  className="absolute h-[100px] w-auto object-contain mix-blend-multiply -ml-[140px]"
                 />
-                <span className="text-4xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] ml-[40px]">
+                <span className="text-4xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] ml-[40px] animate-fade-in">
                   Mockeefy
                 </span>
               </div>

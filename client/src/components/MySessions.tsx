@@ -164,7 +164,10 @@ type Session = {
   } | null;
 };
 
+import AiSessionsList from "./AiSessionsList";
+
 const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
+  const [activeTab, setActiveTab] = useState<'expert' | 'ai'>('expert');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -536,7 +539,22 @@ const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
                   </div>
                 </div>
 
-                <div className="relative">
+                <div className="flex border-b border-gray-100 mt-6">
+                  <button
+                    onClick={() => setActiveTab('expert')}
+                    className={`px-6 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'expert' ? 'border-[#004fcb] text-[#004fcb]' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                  >
+                    Expert Sessions
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('ai')}
+                    className={`px-6 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === 'ai' ? 'border-[#004fcb] text-[#004fcb]' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                  >
+                    AI Mock Interviews
+                  </button>
+                </div>
+
+                <div className="relative mt-4">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
@@ -548,197 +566,203 @@ const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
                 </div>
               </div>
 
-              {/* Status Tabs */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm">
-                <FilterScrollStrip
-                  items={STATUSES}
-                  selectedItem={statusFilter}
-                  onSelect={setStatusFilter}
-                />
-              </div>
-
-              {/* Sessions Grid */}
-              {loading ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {[1, 2, 3].map(i => <SessionCardSkeleton key={i} />)}
-                </div>
-              ) : currentSessions.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-20 text-center">
-                  <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="w-10 h-10 text-[#004fcb]" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">No matching sessions</h3>
-                  <p className="text-gray-500 max-w-xs mx-auto">We couldn't find any sessions matching your current filters.</p>
-                  <button
-                    onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
-                    className="mt-6 text-[#004fcb] font-bold hover:underline"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
+              {activeTab === 'ai' ? (
+                <AiSessionsList />
               ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {currentSessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className="group bg-white rounded-2xl border border-gray-200 hover:border-[#004fcb]/30 p-5 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-[#004fcb]/5 relative flex flex-col sm:flex-row gap-6"
-                    >
-                      {/* Left: Date/Time Badge */}
-                      <div className="flex flex-row sm:flex-col items-center justify-center sm:w-24 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 shrink-0">
-                        <span className="text-xs font-black text-[#004fcb] uppercase">{new Date(session.startTime || 0).toLocaleDateString('en-US', { month: 'short' })}</span>
-                        <span className="text-2xl font-black text-gray-900">{new Date(session.startTime || 0).getDate()}</span>
-                        <span className="text-[10px] font-bold text-gray-400 mt-1">{new Date(session.startTime || 0).getFullYear()}</span>
-                      </div>
+                <>
+                  {/* Status Tabs */}
+                  <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm">
+                    <FilterScrollStrip
+                      items={STATUSES}
+                      selectedItem={statusFilter}
+                      onSelect={setStatusFilter}
+                    />
+                  </div>
 
-                      {/* Middle: Content */}
-                      <div className="flex-1 space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              {isSessionActive(session) ? (
-                                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 text-[8px] font-black uppercase lg:animate-pulse">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-                                  Live Now
-                                </span>
-                              ) : (
-                                <span className={`text-[8px] font-black px-2 py-0.5 rounded tracking-tighter uppercase border ${session.status.toLowerCase() === 'completed' ? 'bg-green-50 text-green-700 border-green-100' :
-                                  'bg-blue-50 text-blue-700 border-blue-100'
-                                  }`}>
-                                  {session.status}
-                                </span>
-                              )}
-                              <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
-                                <Clock className="w-3 h-3" />
-                                {session.time} - {new Date(session.endTime || 0).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                <span className="ml-1 text-gray-300">|</span>
-                                <span className="ml-1">{session.duration}</span>
-                              </span>
-                            </div>
-                            <h3 className="text-xl font-black text-gray-900 leading-tight group-hover:text-[#004fcb] transition-colors">
-                              {session.expertise?.[0] || session.role}
-                            </h3>
-                            <div className="flex items-center gap-3 mt-2">
-                              <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                {session.profileImage ? (
-                                  <img src={getProfileImageUrl(session.profileImage)} className="w-full h-full object-cover" alt="" />
-                                ) : (
-                                  <div className="w-full h-full bg-[#004fcb]/10 text-[#004fcb] text-[8px] font-bold flex items-center justify-center">{session.expert.charAt(0)}</div>
+                  {/* Sessions Grid */}
+                  {loading ? (
+                    <div className="grid grid-cols-1 gap-4">
+                      {[1, 2, 3].map(i => <SessionCardSkeleton key={i} />)}
+                    </div>
+                  ) : currentSessions.length === 0 ? (
+                    <div className="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-20 text-center">
+                      <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Calendar className="w-10 h-10 text-[#004fcb]" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">No matching sessions</h3>
+                      <p className="text-gray-500 max-w-xs mx-auto">We couldn't find any sessions matching your current filters.</p>
+                      <button
+                        onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
+                        className="mt-6 text-[#004fcb] font-bold hover:underline"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {currentSessions.map((session) => (
+                        <div
+                          key={session.id}
+                          className="group bg-white rounded-2xl border border-gray-200 hover:border-[#004fcb]/30 p-5 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-[#004fcb]/5 relative flex flex-col sm:flex-row gap-6"
+                        >
+                          {/* Left: Date/Time Badge */}
+                          <div className="flex flex-row sm:flex-col items-center justify-center sm:w-24 px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 shrink-0">
+                            <span className="text-xs font-black text-[#004fcb] uppercase">{new Date(session.startTime || 0).toLocaleDateString('en-US', { month: 'short' })}</span>
+                            <span className="text-2xl font-black text-gray-900">{new Date(session.startTime || 0).getDate()}</span>
+                            <span className="text-[10px] font-bold text-gray-400 mt-1">{new Date(session.startTime || 0).getFullYear()}</span>
+                          </div>
+
+                          {/* Middle: Content */}
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  {isSessionActive(session) ? (
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 text-[8px] font-black uppercase lg:animate-pulse">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                      Live Now
+                                    </span>
+                                  ) : (
+                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded tracking-tighter uppercase border ${session.status.toLowerCase() === 'completed' ? 'bg-green-50 text-green-700 border-green-100' :
+                                      'bg-blue-50 text-blue-700 border-blue-100'
+                                      }`}>
+                                      {session.status}
+                                    </span>
+                                  )}
+                                  <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                    <Clock className="w-3 h-3" />
+                                    {session.time} - {new Date(session.endTime || 0).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                    <span className="ml-1 text-gray-300">|</span>
+                                    <span className="ml-1">{session.duration}</span>
+                                  </span>
+                                </div>
+                                <h3 className="text-xl font-black text-gray-900 leading-tight group-hover:text-[#004fcb] transition-colors">
+                                  {session.expertise?.[0] || session.role}
+                                </h3>
+                                <div className="flex items-center gap-3 mt-2">
+                                  <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                    {session.profileImage ? (
+                                      <img src={getProfileImageUrl(session.profileImage)} className="w-full h-full object-cover" alt="" />
+                                    ) : (
+                                      <div className="w-full h-full bg-[#004fcb]/10 text-[#004fcb] text-[8px] font-bold flex items-center justify-center">{session.expert.charAt(0)}</div>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">With Expert</span>
+                                    <span className="text-sm font-bold text-gray-700">
+                                      {(/^[0-9a-fA-F]{24}$/.test(session.expert)) ? "Platform Expert" : session.expert}
+                                      <span className="text-gray-400 font-medium ml-1">@ {session.company}</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-lg font-black text-gray-900">{session.price}</span>
+                                {isSessionActive(session) && (
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-[8px] font-black text-[#004fcb] uppercase tracking-widest">Meeting ID</span>
+                                    <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{session.sessionId}</span>
+                                  </div>
                                 )}
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">With Expert</span>
-                                <span className="text-sm font-bold text-gray-700">
-                                  {(/^[0-9a-fA-F]{24}$/.test(session.expert)) ? "Platform Expert" : session.expert}
-                                  <span className="text-gray-400 font-medium ml-1">@ {session.company}</span>
+                            </div>
+
+                            {/* Topics */}
+                            <div className="flex flex-wrap gap-2">
+                              {session.expertise.map((topic, idx) => (
+                                <span key={idx} className="bg-gray-50 text-gray-600 text-[10px] font-bold px-2 py-1 rounded-lg border border-gray-100 capitalize">
+                                  {topic}
                                 </span>
+                              ))}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
+                              {session.status.toLowerCase() === 'completed' || isSessionEnded(session) ? (
+                                <button
+                                  onClick={() => setReviewSession(session)}
+                                  className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-[#004fcb] text-[#004fcb] rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                  <Star className="w-3.5 h-3.5" />
+                                  Rate Now
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleJoinMeeting(session)}
+                                  disabled={!isSessionActive(session)}
+                                  className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isSessionActive(session)
+                                    ? "bg-[#004fcb] text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    }`}
+                                >
+                                  <Video className="w-3.5 h-3.5" />
+                                  {isSessionActive(session) ? "Enter Meeting Room" : getSessionStatusInfo(session).reason}
+                                </button>
+                              )}
+
+                              <div className="relative ml-auto">
+                                <button
+                                  onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
+                                  className="p-2.5 rounded-xl border border-gray-200 hover:border-[#004fcb] text-gray-400 hover:text-[#004fcb] transition-all"
+                                >
+                                  <MoreVertical className="w-5 h-5" />
+                                </button>
+                                {openDropdownId === session.sessionId && (
+                                  <div className="absolute right-0 bottom-full mb-3 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden py-1">
+                                    <button
+                                      onClick={() => handleFetchReviews(session, 'expert_feedback')}
+                                      className="w-full text-left px-5 py-3 text-[10px] font-black text-gray-700 hover:bg-gray-50 uppercase tracking-widest border-b border-gray-50"
+                                    >
+                                      Expert Feedback
+                                    </button>
+                                    <button
+                                      onClick={() => handleFetchReviews(session, 'my_review')}
+                                      className="w-full text-left px-5 py-3 text-[10px] font-black text-gray-700 hover:bg-gray-50 uppercase tracking-widest"
+                                    >
+                                      My Review
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-lg font-black text-gray-900">{session.price}</span>
-                            {isSessionActive(session) && (
-                              <div className="flex flex-col items-end">
-                                <span className="text-[8px] font-black text-[#004fcb] uppercase tracking-widest">Meeting ID</span>
-                                <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{session.sessionId}</span>
-                              </div>
-                            )}
-                          </div>
                         </div>
-
-                        {/* Topics */}
-                        <div className="flex flex-wrap gap-2">
-                          {session.expertise.map((topic, idx) => (
-                            <span key={idx} className="bg-gray-50 text-gray-600 text-[10px] font-bold px-2 py-1 rounded-lg border border-gray-100 capitalize">
-                              {topic}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                          {session.status.toLowerCase() === 'completed' || isSessionEnded(session) ? (
-                            <button
-                              onClick={() => setReviewSession(session)}
-                              className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-[#004fcb] text-[#004fcb] rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
-                            >
-                              <Star className="w-3.5 h-3.5" />
-                              Rate Now
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleJoinMeeting(session)}
-                              disabled={!isSessionActive(session)}
-                              className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isSessionActive(session)
-                                ? "bg-[#004fcb] text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20"
-                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                }`}
-                            >
-                              <Video className="w-3.5 h-3.5" />
-                              {isSessionActive(session) ? "Enter Meeting Room" : getSessionStatusInfo(session).reason}
-                            </button>
-                          )}
-
-                          <div className="relative ml-auto">
-                            <button
-                              onClick={() => setOpenDropdownId(openDropdownId === session.sessionId ? null : session.sessionId)}
-                              className="p-2.5 rounded-xl border border-gray-200 hover:border-[#004fcb] text-gray-400 hover:text-[#004fcb] transition-all"
-                            >
-                              <MoreVertical className="w-5 h-5" />
-                            </button>
-                            {openDropdownId === session.sessionId && (
-                              <div className="absolute right-0 bottom-full mb-3 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden py-1">
-                                <button
-                                  onClick={() => handleFetchReviews(session, 'expert_feedback')}
-                                  className="w-full text-left px-5 py-3 text-[10px] font-black text-gray-700 hover:bg-gray-50 uppercase tracking-widest border-b border-gray-50"
-                                >
-                                  Expert Feedback
-                                </button>
-                                <button
-                                  onClick={() => handleFetchReviews(session, 'my_review')}
-                                  className="w-full text-left px-5 py-3 text-[10px] font-black text-gray-700 hover:bg-gray-50 uppercase tracking-widest"
-                                >
-                                  My Review
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {/* Pagination (Tighter design) */}
-              {filteredSessions.length > sessionsPerPage && (
-                <div className="flex items-center justify-center gap-2 pt-6">
-                  <button
-                    onClick={prevPage}
-                    disabled={currentPage === 1}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${currentPage === 1 ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-900 border-gray-200 hover:border-[#004fcb]"
-                      }`}
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => paginate(i + 1)}
-                      className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === i + 1 ? "bg-[#004fcb] text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-[#004fcb]"
-                        }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={nextPage}
-                    disabled={currentPage === totalPages}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${currentPage === totalPages ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-900 border-gray-200 hover:border-[#004fcb]"
-                      }`}
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
+                  {/* Pagination (Tighter design) */}
+                  {filteredSessions.length > sessionsPerPage && (
+                    <div className="flex items-center justify-center gap-2 pt-6">
+                      <button
+                        onClick={prevPage}
+                        disabled={currentPage === 1}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${currentPage === 1 ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-900 border-gray-200 hover:border-[#004fcb]"
+                          }`}
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      {[...Array(totalPages)].map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => paginate(i + 1)}
+                          className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === i + 1 ? "bg-[#004fcb] text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-[#004fcb]"
+                            }`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button
+                        onClick={nextPage}
+                        disabled={currentPage === totalPages}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${currentPage === totalPages ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-900 border-gray-200 hover:border-[#004fcb]"
+                          }`}
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </main>
 
@@ -803,8 +827,6 @@ const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
           </div>
         </div>
 
-
-        {/* --- READ-ONLY REVIEW MODAL --- */}
         <ReviewDetailsModal
           isOpen={!!viewReviewData}
           onClose={() => setViewReviewData(null)}
@@ -813,108 +835,108 @@ const MySessions = ({ hideLayout = false }: { hideLayout?: boolean }) => {
         />
 
         {/* --- REVIEW SESSION MODAL --- */}
-        {reviewSession && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-100 scale-100">
-            <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setReviewSession(null)}></div>
-            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 h-auto max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
-                <h3 className="font-bold text-gray-900 text-lg">Rate Your Expert</h3>
-                <button onClick={() => setReviewSession(null)} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 space-y-6">
-                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-lg">
-                    {reviewSession.expert.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Reviewing Expert</p>
-                    <p className="font-bold text-gray-900">{reviewSession.expert}</p>
-                  </div>
+        {
+          reviewSession && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-100 scale-100">
+              <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setReviewSession(null)}></div>
+              <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 h-auto max-h-[90vh] overflow-y-auto">
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
+                  <h3 className="font-bold text-gray-900 text-lg">Rate Your Expert</h3>
+                  <button onClick={() => setReviewSession(null)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-
-                {/* Ratings */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Overall Experience</label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          onClick={() => setReviewForm(prev => ({ ...prev, overallRating: star }))}
-                          className={`transition-transform hover:scale-110 ${star <= reviewForm.overallRating ? 'text-amber-400' : 'text-gray-300'}`}
-                        >
-                          <Star className="w-8 h-8 fill-current" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Expertise / Knowledge</label>
-                      <input
-                        type="number" min="1" max="5"
-                        value={reviewForm.technicalRating}
-                        onChange={e => setReviewForm(prev => ({ ...prev, technicalRating: parseInt(e.target.value) }))}
-                        className="w-full border rounded p-2"
-                      />
+                <div className="p-6 space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-lg">
+                      {reviewSession.expert.charAt(0)}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Communication</label>
-                      <input
-                        type="number" min="1" max="5"
-                        value={reviewForm.communicationRating}
-                        onChange={e => setReviewForm(prev => ({ ...prev, communicationRating: parseInt(e.target.value) }))}
-                        className="w-full border rounded p-2"
-                      />
+                      <p className="text-sm text-gray-500">Reviewing Expert</p>
+                      <p className="font-bold text-gray-900">{reviewSession.expert}</p>
                     </div>
                   </div>
-                </div>
 
-                {/* Text Inputs */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">What did you like? (Strengths)</label>
-                  <input
-                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Very knowledgeable, Patient..."
-                    value={reviewForm.strengths}
-                    onChange={e => setReviewForm(prev => ({ ...prev, strengths: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Areas for Improvement</label>
-                  <input
-                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Could be more structured..."
-                    value={reviewForm.weaknesses}
-                    onChange={e => setReviewForm(prev => ({ ...prev, weaknesses: e.target.value }))}
-                  />
-                </div>
+                  {/* Ratings */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Overall Experience</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setReviewForm(prev => ({ ...prev, overallRating: star }))}
+                            className={`transition-transform hover:scale-110 ${star <= reviewForm.overallRating ? 'text-amber-400' : 'text-gray-300'}`}
+                          >
+                            <Star className="w-8 h-8 fill-current" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Expertise / Knowledge</label>
+                        <input
+                          type="number" min="1" max="5"
+                          value={reviewForm.technicalRating}
+                          onChange={e => setReviewForm(prev => ({ ...prev, technicalRating: parseInt(e.target.value) }))}
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Communication</label>
+                        <input
+                          type="number" min="1" max="5"
+                          value={reviewForm.communicationRating}
+                          onChange={e => setReviewForm(prev => ({ ...prev, communicationRating: parseInt(e.target.value) }))}
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Feedback</label>
-                  <textarea
-                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[120px]"
-                    placeholder="Share your experience with this expert..."
-                    value={reviewForm.feedback}
-                    onChange={e => setReviewForm(prev => ({ ...prev, feedback: e.target.value }))}
-                  ></textarea>
-                </div>
+                  {/* Text Inputs */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">What did you like? (Strengths)</label>
+                    <input
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="Very knowledgeable, Patient..."
+                      value={reviewForm.strengths}
+                      onChange={e => setReviewForm(prev => ({ ...prev, strengths: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Areas for Improvement</label>
+                    <input
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="Could be more structured..."
+                      value={reviewForm.weaknesses}
+                      onChange={e => setReviewForm(prev => ({ ...prev, weaknesses: e.target.value }))}
+                    />
+                  </div>
 
-                <button
-                  className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleSubmitReview}
-                  disabled={submittingReview}
-                >
-                  {submittingReview && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {submittingReview ? "Submitting..." : "Submit Review"}
-                </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Feedback</label>
+                    <textarea
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[120px]"
+                      placeholder="Share your experience with this expert..."
+                      value={reviewForm.feedback}
+                      onChange={e => setReviewForm(prev => ({ ...prev, feedback: e.target.value }))}
+                    ></textarea>
+                  </div>
+
+                  <button
+                    className="w-full justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleSubmitReview}
+                    disabled={submittingReview}
+                  >
+                    {submittingReview && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {submittingReview ? "Submitting..." : "Submit Review"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
+          )}
 
         {!hideLayout && <BottomNav />}
         {!hideLayout && <Footer />}

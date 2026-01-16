@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Calendar, Clock, User, Award, Settings, LogOut } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export type NavItem = {
   id: string;
@@ -17,12 +18,20 @@ type SideNavProps = {
 };
 
 export default function SideNav({ isOpen = false, onClose, className = "" }: SideNavProps) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    logout();
+    navigate("/signin", { replace: true });
+  };
+
   const items: NavItem[] = [
     { id: "dashboard", label: "Dashboard", to: "/dashboard", icon: <LayoutDashboard size={20} /> },
+    { id: "profile", label: "Profile", to: "/dashboard/profile", icon: <User size={20} /> },
     { id: "sessions", label: "Sessions", to: "/dashboard/sessions", icon: <Calendar size={20} /> },
     { id: "availability", label: "Availability", to: "/dashboard/availability", icon: <Clock size={20} /> },
     { id: "expertise", label: "Skills & Expertise", to: "/dashboard/skills", icon: <Award size={20} /> },
-    { id: "profile", label: "Profile", to: "/dashboard/profile", icon: <User size={20} /> },
   ];
 
   const extras: NavItem[] = [
@@ -33,10 +42,10 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
     <>
       {/* Desktop sidebar */}
       <aside className={`hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen ${className}`}>
-        <div className="h-16 flex items-center px-6 border-b border-gray-100">
-          <div className="flex items-center gap-2 font-bold text-gray-900 text-lg">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white text-sm">E</div>
-            ExpertPanel
+        <div className="h-[80px] flex items-center px-6 border-b border-blue-100/50 overflow-hidden">
+          <div className="relative flex items-center w-full h-full">
+            <img src="/mockeefynew.png" alt="Mockeefy" className="absolute left-[-28px] h-[90px] w-auto object-contain mix-blend-multiply" />
+            <span className="ml-[52px] text-2xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] animate-fade-in">Mockeefy</span>
           </div>
         </div>
 
@@ -47,7 +56,7 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
               to={item.to}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-                  ? 'bg-gray-900 text-white shadow-sm'
+                  ? 'bg-[#004fcb] text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                 }`
               }
@@ -74,7 +83,7 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
               to={item.to}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-                  ? 'bg-gray-900 text-white shadow-sm'
+                  ? 'bg-[#004fcb] text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                 }`
               }
@@ -86,7 +95,7 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
         </div>
 
         <div className="p-4 border-t border-gray-100">
-          <button className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+          <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
             <LogOut size={20} />
             <span>Sign Out</span>
           </button>
@@ -101,10 +110,10 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
         />
 
         <div className={`absolute inset-y-0 left-0 w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <div className="flex items-center gap-2 font-bold text-gray-900 text-lg">
-              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white text-sm">E</div>
-              ExpertPanel
+          <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100/50 h-[80px] overflow-hidden">
+            <div className="relative flex items-center w-full h-full">
+              <img src="/mockeefynew.png" alt="Mockeefy" className="absolute left-[-28px] h-[90px] w-auto object-contain mix-blend-multiply" />
+              <span className="ml-[42px] text-2xl font-bold tracking-tight text-[#004fcb] font-['Outfit'] animate-fade-in">Mockeefy</span>
             </div>
             <button type="button" onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-md">
               <span className="sr-only">Close menu</span>
@@ -120,7 +129,7 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                    ? 'bg-gray-900 text-white shadow-lg shadow-gray-200'
+                    ? 'bg-[#004fcb] text-white shadow-lg shadow-blue-200'
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                   }`
                 }
@@ -146,7 +155,7 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-[#004fcb] text-white'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     }`
                   }
@@ -159,7 +168,7 @@ export default function SideNav({ isOpen = false, onClose, className = "" }: Sid
           </nav>
 
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100">
-            <button className="flex items-center gap-3 w-full px-3 py-3 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+            <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-3 py-3 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
               <LogOut size={20} />
               <span>Sign Out</span>
             </button>

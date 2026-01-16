@@ -116,7 +116,9 @@ export function MultiSelect({
   onChange,
   options = [],
   placeholder = "Type to search...",
-  className = ""
+  className = "",
+  maxItems,
+  dropUp = false
 }: {
   label?: string;
   value?: string[];
@@ -124,18 +126,24 @@ export function MultiSelect({
   options?: { value: string; label: string }[];
   placeholder?: string;
   className?: string;
+  maxItems?: number;
+  dropUp?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   const filteredOptions = options.filter(opt =>
     opt.label.toLowerCase().includes(search.toLowerCase()) &&
-    !value.includes(opt.value)
+    !value.some(v => v.toLowerCase() === opt.value.toLowerCase())
   );
 
   const addItem = (itemValue: string) => {
-    if (!value.includes(itemValue)) {
-      onChange?.([...value, itemValue]);
+    const finalValue = itemValue.toUpperCase();
+    if (maxItems && value.length >= maxItems) {
+      return;
+    }
+    if (!value.some(v => v.toUpperCase() === finalValue)) {
+      onChange?.([...value, finalValue]);
     }
     setSearch("");
     setIsOpen(false);
@@ -188,7 +196,7 @@ export function MultiSelect({
 
         {/* Dropdown options */}
         {isOpen && (search || filteredOptions.length > 0) && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+          <div className={`absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto ${dropUp ? "bottom-full mb-1" : "mt-1"}`}>
             {filteredOptions.map((opt) => (
               <button
                 key={opt.value}
