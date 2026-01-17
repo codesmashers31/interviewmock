@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
-import { Card, IconButton, Input, PrimaryButton, SecondaryButton } from "../pages/ExpertDashboard";
+import { IconButton, Input, PrimaryButton, SecondaryButton } from "../pages/ExpertDashboard";
 import axios from '../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
+import { AlertCircle } from "lucide-react";
 
-const ExpertProfession = () => {
+interface ExpertProfessionProps {
+  onUpdate?: () => void;
+  profileData?: any;
+  isMissing?: boolean;
+}
+
+const ExpertProfession = ({ onUpdate, isMissing }: ExpertProfessionProps) => {
   const { user } = useAuth();
 
 
@@ -76,6 +83,8 @@ const ExpertProfession = () => {
 
       if (!res.data.success) {
         toast.error("Failed to remove experience in DB");
+      } else {
+        if (onUpdate) onUpdate();
       }
     } catch (err: any) {
       console.error("Error removing experience:", err);
@@ -93,6 +102,7 @@ const ExpertProfession = () => {
 
       if (res.data.success) {
         toast.success("Professional details saved successfully!");
+        if (onUpdate) onUpdate();
       } else {
         toast.error("Failed to save professional info");
       }
@@ -105,10 +115,13 @@ const ExpertProfession = () => {
   if (loading) return <p>Loading professional info...</p>;
 
   return (
-    <Card>
+    <div className="h-full">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-blue-800">Professional Details</h3>
+          <h3 className="text-lg font-semibold text-blue-800 flex items-center gap-2">
+            Professional Details
+            {isMissing && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Action Required</span>}
+          </h3>
           <p className="text-sm text-gray-500 mt-1">Current role and work history</p>
         </div>
         <div>
@@ -187,7 +200,7 @@ const ExpertProfession = () => {
       <div className="mt-6 flex justify-end">
         <PrimaryButton onClick={saveProfessional}>Save Changes</PrimaryButton>
       </div>
-    </Card>
+    </div>
   );
 };
 

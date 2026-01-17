@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from '../lib/axios';
 import { toast } from "sonner";
-import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
+import { Input, PrimaryButton } from '../pages/ExpertDashboard';
 import { useAuth } from '../context/AuthContext';
-import { Shield } from 'lucide-react';
+import { Shield, AlertCircle } from 'lucide-react';
 
-const ExpertVerification = () => {
+interface ExpertVerificationProps {
+  onUpdate?: () => void;
+  profileData?: any;
+  isMissing?: boolean;
+}
+
+const ExpertVerification = ({ onUpdate, isMissing }: ExpertVerificationProps) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<{ verification: { companyIdFile: File | null; aadharFile: File | null; linkedin: string } }>({
     verification: {
@@ -79,6 +85,7 @@ const ExpertVerification = () => {
 
       toast.success('Verification saved successfully!');
       fetchProfile(); // Refresh profile to get updated verification status
+      if (onUpdate) onUpdate();
 
     } catch (error: any) {
       console.error('Error saving verification:', error);
@@ -92,7 +99,7 @@ const ExpertVerification = () => {
 
   return (
     <>
-      <Card>
+      <div className="h-full">
         {/* Verified Badge */}
         {isVerified && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
@@ -107,7 +114,10 @@ const ExpertVerification = () => {
         )}
 
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-blue-800">Verification</h3>
+          <h3 className="text-lg font-semibold text-blue-800 flex items-center gap-2">
+            Verification
+            {isMissing && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Action Required</span>}
+          </h3>
           <p className="text-sm text-gray-500 mt-1">Company ID, Aadhar and LinkedIn</p>
         </div>
 
@@ -175,7 +185,7 @@ const ExpertVerification = () => {
             Save Changes
           </PrimaryButton>
         </div>
-      </Card>
+      </div>
     </>
   );
 };

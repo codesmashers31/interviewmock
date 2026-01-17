@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
-import { Card, Input, PrimaryButton, SecondaryButton, IconButton } from "../pages/ExpertDashboard";
+import { Input, PrimaryButton, SecondaryButton, IconButton } from "../pages/ExpertDashboard";
 import axios from '../lib/axios';
 import { toast } from "sonner";
-
 import { useAuth } from "../context/AuthContext";
+import { AlertCircle } from "lucide-react";
 
-const ExpertEducation = () => {
+interface ExpertEducationProps {
+    onUpdate?: () => void;
+    profileData?: any;
+    isMissing?: boolean;
+}
+
+const ExpertEducation = ({ onUpdate, isMissing }: ExpertEducationProps) => {
     const { user } = useAuth();
-    // Using user?.id based on AuthContext definition (User interface has id?: string)
-    // Fallback to empty string if undefined to avoid breaking API calls, but effect will skip if no user
     const userId = user?.id || "";
 
     const initialProfile = { education: [] as any[] };
@@ -45,8 +49,7 @@ const ExpertEducation = () => {
                 }
             } catch (err: any) {
                 if (err.response && err.response.status === 404) {
-                    // alert(err.response.data.message); // Personal info missing - suppressing alert on load
-
+                    // ignore
                 } else {
                     console.error("Failed to fetch education:", err);
                 }
@@ -73,6 +76,7 @@ const ExpertEducation = () => {
 
             if (response.data.success) {
                 toast.success("Education saved successfully!");
+                if (onUpdate) onUpdate();
             } else {
                 toast.error("Failed to save education");
             }
@@ -98,6 +102,8 @@ const ExpertEducation = () => {
 
             if (!response.data.success) {
                 toast.error("Failed to remove education in DB");
+            } else {
+                if (onUpdate) onUpdate();
             }
         } catch (err) {
             console.error("Error removing education:", err);
@@ -109,10 +115,13 @@ const ExpertEducation = () => {
     if (loading) return <p>Loading education...</p>;
 
     return (
-        <Card>
+        <div className="h-full">
             <div className="flex items-start justify-between mb-4">
                 <div>
-                    <h3 className="text-lg font-semibold text-blue-800">Education</h3>
+                    <h3 className="text-lg font-semibold text-blue-800 flex items-center gap-2">
+                        Education
+                        {isMissing && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Action Required</span>}
+                    </h3>
                     <p className="text-sm text-gray-500 mt-1">Add degrees and study periods</p>
                 </div>
                 <div>
@@ -149,7 +158,7 @@ const ExpertEducation = () => {
             <div className="mt-6 flex justify-end">
                 <PrimaryButton onClick={saveEducation}>Save Changes</PrimaryButton>
             </div>
-        </Card>
+        </div>
     );
 };
 

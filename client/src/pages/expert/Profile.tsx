@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import ExpertProfileHeader from "../../components/ExpertProfileHeader";
 import PersonalInfo from "../../components/PersonalInfo";
 import ExpertEducation from "../../components/ExpertEducation";
@@ -7,23 +8,51 @@ import ExpertVerification from "../../components/ExpertVerification";
 import axios from '../../lib/axios';
 import { useAuth } from "../../context/AuthContext";
 import { Skeleton } from "../../components/ui/skeleton";
-import { AlertCircle, Building2, Briefcase } from "lucide-react";
+import {
+  User,
+  BookOpen,
+  Briefcase,
+  ShieldCheck,
+  LayoutDashboard,
+  CheckCircle2,
+  AlertCircle,
+  ChevronLeft
+} from "lucide-react";
 
+// Define the tabs with icons and identifiers
 const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "personal", label: "Personal" },
-  { id: "education", label: "Education" },
-  { id: "profession", label: "Profession" },
-  { id: "verification", label: "Verification" },
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "personal", label: "Personal Info", icon: User },
+  { id: "education", label: "Education", icon: BookOpen },
+  { id: "profession", label: "Experience", icon: Briefcase },
+  { id: "verification", label: "Verification", icon: ShieldCheck },
 ];
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  // navigate removed
   const [active, setActive] = useState<string>("overview");
+  const [showSidebar, setShowSidebar] = useState(true); // New state for mobile toggle
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
   const [missingSections, setMissingSections] = useState<string[]>([]);
+
+  // Derived state to check if a specific section is missing
+  const isSectionMissing = (tabId: string) => {
+    // Map tab IDs to backend section names
+    const sectionMap: Record<string, string> = {
+      personal: "Personal Information",
+      education: "Education",
+      profession: "Professional Details",
+      verification: "Verification Documents"
+    };
+
+    const backendName = sectionMap[tabId];
+    if (!backendName) return false; // Overview or unknown
+
+    return missingSections.includes(backendName);
+  };
 
   const fetchProfileData = useCallback(async () => {
     if (!user) return;
@@ -37,12 +66,10 @@ export default function ProfilePage() {
         setStatus(newStatus);
         setProfileData(p);
         setMissingSections(res.data.missingSections || []);
-
         localStorage.setItem('profile_status', newStatus);
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
-      // Use cached status if available
       const cached = localStorage.getItem('profile_status');
       if (cached) setStatus(cached);
     } finally {
@@ -51,140 +78,180 @@ export default function ProfilePage() {
   }, [user]);
 
   useEffect(() => {
-    const cached = localStorage.getItem('profile_status');
-    if (cached) {
-      setStatus(cached);
-    }
-
     if (user) {
       fetchProfileData();
     }
   }, [user, fetchProfileData]);
 
+  // Handler to refresh data after updates in child components
+  const handleUpdate = () => {
+    fetchProfileData();
+  };
+
   const getStatusColor = (st: string) => {
     switch (st) {
-      case "Active": return "bg-gradient-to-r from-green-100 to-emerald-50 text-green-700 border-green-200 shadow-sm";
-      case "approved": return "bg-gradient-to-r from-blue-100 to-cyan-50 text-blue-700 border-blue-200 shadow-sm";
-      case "rejected": return "bg-gradient-to-r from-red-100 to-rose-50 text-red-700 border-red-200 shadow-sm";
-      default: return "bg-gradient-to-r from-amber-100 to-orange-50 text-amber-700 border-amber-200 shadow-sm";
+      case "Active": return "text-green-600 bg-green-50 border-green-200";
+      case "approved": return "text-blue-600 bg-blue-50 border-blue-200";
+      case "rejected": return "text-red-600 bg-red-50 border-red-200";
+      default: return "text-amber-600 bg-amber-50 border-amber-200";
     }
   };
 
   const getStatusLabel = (st: string) => {
-    if (st === "Active") return "✓ Verified";
-    if (st === "approved") return "✓ Approved";
-    if (st === "rejected") return "✗ Rejected";
-    return "⏳ Pending";
+    if (st === "Active") return "Verified Expert";
+    if (st === "approved") return "Approved (Pending Activation)";
+    if (st === "rejected") return "Profile Rejected";
+    return "Verification Pending";
   };
 
   const renderContent = () => {
+    // Pass onUpdate to all children so they can trigger a re-fetch of missing sections
+    const commonProps = { onUpdate: handleUpdate, profileData };
+
     switch (active) {
       case "overview":
-        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} onRefresh={fetchProfileData} />;
+        return <ExpertProfileHeader onNavigate={(tab) => { setActive(tab); setShowSidebar(false); }} onRefresh={fetchProfileData} />;
       case "personal":
-        return <PersonalInfo />;
+        return <PersonalInfo {...commonProps} isMissing={isSectionMissing('personal')} />;
       case "education":
-        return <ExpertEducation />;
+        return <ExpertEducation {...commonProps} isMissing={isSectionMissing('education')} />;
       case "profession":
-        return <ExpertProfession />;
+        return <ExpertProfession {...commonProps} isMissing={isSectionMissing('professional') || isSectionMissing('profession')} />;
       case "verification":
-        return <ExpertVerification />;
+        return <ExpertVerification {...commonProps} isMissing={isSectionMissing('verification')} />;
       default:
-        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} onRefresh={fetchProfileData} />;
+        return <ExpertProfileHeader onNavigate={(tab) => { setActive(tab); setShowSidebar(false); }} onRefresh={fetchProfileData} />;
     }
   };
 
-  return (
-    <div className="h-full bg-gradient-to-br from-gray-50 to-gray-100/50">
-      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xl h-full flex flex-col overflow-hidden backdrop-blur-sm">
-        {/* Fixed Header with Tabs */}
-        <div className="border-b border-gray-100/80 bg-white/95 backdrop-blur-sm shrink-0 sticky top-0 z-10">
-          <div className="p-8 pb-4">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h3 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  {profileData?.name || user?.name || "Expert Profile"}
-                </h3>
-
-                {profileData?.title || profileData?.company ? (
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                    {profileData.title && (
-                      <span className="flex items-center gap-1.5 font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-                        <Briefcase className="w-3.5 h-3.5" />
-                        {profileData.title}
-                      </span>
-                    )}
-                    {profileData.company && (
-                      <span className="flex items-center gap-1.5 font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded-md">
-                        <Building2 className="w-3.5 h-3.5" />
-                        {profileData.company}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 mt-2 font-medium">Manage your public profile and professional details</p>
-                )}
-              </div>
-
-              {/* Status Badge in Header */}
-              {status && !loading ? (
-                <span className={`px-4 py-2.5 text-sm font-semibold rounded-xl border ${getStatusColor(status)} animate-fadeIn`}>
-                  <span className="flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${status === 'Active' || status === 'approved' ? 'bg-green-400' : status === 'rejected' ? 'bg-red-400' : 'bg-amber-400'} opacity-75`}></span>
-                      <span className={`relative inline-flex rounded-full h-2 w-2 ${status === 'Active' || status === 'approved' ? 'bg-green-500' : status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`}></span>
-                    </span>
-                    {getStatusLabel(status)}
-                  </span>
-                </span>
-              ) : loading ? (
-                <Skeleton className="h-10 w-28 rounded-xl" />
-              ) : null}
-            </div>
-
-            {/* Missing Sections Alert */}
-            {!loading && missingSections.length > 0 && status !== 'Active' && status !== 'approved' && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-4 animate-in slide-in-from-top-2">
-                <div className="p-2 bg-amber-100 rounded-lg shrink-0">
-                  <AlertCircle className="w-5 h-5 text-amber-700" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-amber-900 text-sm">Profile Incomplete</h4>
-                  <p className="text-sm text-amber-700 mt-1">
-                    You have <span className="font-bold">{missingSections.length}</span> pending sections:{" "}
-                    <span className="font-medium">
-                      {missingSections.join(", ")}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-8 overflow-x-auto scrollbar-hide">
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActive(t.id)}
-                  className={`pb-4 text-sm font-semibold border-b-2 transition-all duration-300 whitespace-nowrap relative group ${active === t.id
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                >
-                  {t.label}
-                  {active === t.id && (
-                    <span className="absolute -bottom-0.5 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full"></span>
-                  )}
-                  <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                </button>
-              ))}
-            </div>
+  if (loading && !profileData) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-3 space-y-4">
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          <div className="col-span-9 space-y-4">
+            <Skeleton className="h-12 w-full rounded-md" />
+            <Skeleton className="h-96 w-full rounded-xl" />
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 min-h-0 bg-gradient-to-b from-gray-50/50 to-white">
-          <div className="max-w-4xl mx-auto animate-fadeIn">
-            {renderContent()}
+  return (
+    <div className="h-full">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-full flex flex-col overflow-hidden">
+
+        <div className="flex-1 flex min-h-0">
+          {/* LEFT SIDEBAR - Fixed Width on Desktop, Full Width on Mobile */}
+          <div className={`${showSidebar ? 'flex' : 'hidden md:flex'} w-full md:w-80 border-r border-gray-200 bg-white flex-col shrink-0 overflow-y-auto transition-all`}>
+            {/* <div className="p-6 border-b border-gray-100 bg-white text-center">
+              <div className="w-24 h-24 mx-auto bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-3xl mb-3 shadow-inner">
+                {user?.name?.[0]?.toUpperCase() || "E"}
+              </div>
+              <h2 className="font-bold text-gray-900 truncate px-2">{user?.name}</h2>
+              <p className="text-sm text-gray-500 mb-3">{user?.email}</p>
+
+              <div className={`px-3 py-1.5 text-xs font-semibold rounded-full border inline-flex items-center gap-1.5 ${getStatusColor(status)}`}>
+                <span className={`relative flex h-2 w-2`}>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status === 'Active' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${status === 'Active' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                </span>
+                {getStatusLabel(status)}
+              </div>
+            </div> */}
+
+            {/* Navigation Links */}
+            <div className="p-4 space-y-1">
+              {TABS.map((tab) => {
+                const missing = isSectionMissing(tab.id);
+                const isOverview = tab.id === 'overview';
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActive(tab.id);
+                      setShowSidebar(false); // Close sidebar on mobile
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all ${active === tab.id
+                      ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-200"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                  >
+                    <tab.icon className={`w-5 h-5 ${active === tab.id ? "text-blue-600" : "text-gray-400"}`} />
+                    {tab.label}
+
+                    {!isOverview && (
+                      <div className="ml-auto">
+                        {missing ? (
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        )}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Profile Completion Widget - Bottom of Sidebar */}
+            {status !== 'Active' && (
+              <div className="p-4 mt-auto border-t border-gray-100 bg-gray-50/50">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold text-gray-600">
+                  <span>Profile Completion</span>
+                  <span>{Math.round((5 - missingSections.length) / 5 * 100)}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-3">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((5 - missingSections.length) / 5 * 100)}%` }}
+                  />
+                </div>
+                {missingSections.length > 0 ? (
+                  <p className="text-xs text-gray-500">
+                    Complete <span className="font-medium text-gray-800">{missingSections[0]}</span> next to get verified.
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Ready for verification!
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT CONTENT AREA - Flexible */}
+          <div className={`${!showSidebar ? 'flex' : 'hidden md:flex'} flex-1 overflow-y-auto bg-gray-50/30 flex-col`}>
+            <div className="p-4 md:p-8 max-w-5xl mx-auto w-full">
+
+              {/* Mobile Back Button & Header */}
+              <button
+                onClick={() => setShowSidebar(true)}
+                className="md:hidden flex items-center gap-2 text-gray-500 mb-4 hover:text-gray-900 font-medium"
+              >
+                <ChevronLeft className="w-5 h-5" /> Back to Menu
+              </button>
+
+              <div className="md:hidden p-4 mb-4 bg-white rounded-xl border border-gray-200 flex items-center gap-2 font-semibold text-gray-800">
+                {TABS.find(t => t.id === active)?.icon && (
+                  <div className="text-blue-600">
+                    {(() => {
+                      const Icon = TABS.find(t => t.id === active)?.icon;
+                      return Icon ? <Icon size={20} /> : null;
+                    })()}
+                  </div>
+                )}
+                {TABS.find(t => t.id === active)?.label}
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 min-h-[500px]">
+                {renderContent()}
+              </div>
+            </div>
           </div>
         </div>
       </div>

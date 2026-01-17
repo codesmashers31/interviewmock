@@ -80,9 +80,18 @@ const getMissingSections = (expert) => {
 
   // Availability
   const av = expert.availability || {};
-  const weeklyObj = av.weekly || {};
+  let weeklyObj = av.weekly || {};
+
+  // If it's a Mongoose Map, convert to object or get values
+  if (weeklyObj instanceof Map) {
+    weeklyObj = Object.fromEntries(weeklyObj);
+  }
+
   const weeklyHasSlots = Object.values(weeklyObj || {}).some(arr => Array.isArray(arr) && arr.length > 0);
-  const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
+
+  // Relaxed check: Only require at least one time slot
+  const availabilityFilled = weeklyHasSlots;
+
   if (!availabilityFilled) missing.push("Availability");
 
   // Profile Photo
@@ -117,12 +126,19 @@ const computeCompletion = (expert) => {
   const sk = expert.skillsAndExpertise || {};
   if ((sk.domains?.length || sk.tools?.length || sk.languages?.length)) score += 15;
 
-  // Availability (15%)
+  // Availability
   const av = expert.availability || {};
   // ensure weekly is treated as plain object
-  const weeklyObj = av.weekly || {};
+  let weeklyObj = av.weekly || {};
+  if (weeklyObj instanceof Map) {
+    weeklyObj = Object.fromEntries(weeklyObj);
+  }
+
   const weeklyHasSlots = Object.values(weeklyObj || {}).some(arr => Array.isArray(arr) && arr.length > 0);
-  const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
+
+  // User requested "one data is enough", so if they have slots, it's filled.
+  const availabilityFilled = weeklyHasSlots;
+
   if (availabilityFilled) score += 15;
 
   // Profile Photo (5%)
@@ -248,7 +264,7 @@ export const uploadVerificationDocs = async (req, res) => {
         expert.verification.linkedin = req.body.linkedin;
       }
 
-      await expert.save();
+      await expert.save({ validateBeforeSave: false });
 
       return res.json({
         success: true,

@@ -4,7 +4,6 @@ import axios from '../lib/axios';
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { Camera, AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import Stepper, { Step } from "./ui/stepper";
 
 // Progress Ring Component
 const ProgressRing = memo(({
@@ -53,7 +52,7 @@ const ProgressRing = memo(({
 
 ProgressRing.displayName = "ProgressRing";
 
-const ExpertProfileHeader = memo(({ onNavigate, onRefresh }: { onNavigate?: (tab: string) => void; onRefresh?: () => void; }) => {
+const ExpertProfileHeader = memo(({ onRefresh }: { onNavigate?: (tab: string) => void; onRefresh?: () => void; }) => {
   const { user, fetchProfile: refreshGlobalUser } = useAuth();
   const navigate = useNavigate();
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -310,60 +309,41 @@ const ExpertProfileHeader = memo(({ onNavigate, onRefresh }: { onNavigate?: (tab
             ) : (
               missingSections.length > 0 && (
                 <div className="w-full">
-                  <div className="mb-2 flex items-center justify-center gap-2 text-amber-700">
+                  <div className="mb-3 flex items-center justify-center gap-2 text-amber-700">
                     <AlertCircle className="w-5 h-5" />
                     <h4 className="font-semibold">Complete Your Profile</h4>
                   </div>
 
-                  <Stepper
-                    initialStep={1}
-                    // Disable indicators as requested "below the step no need"
-                    disableStepIndicators={true}
-                    onFinalStepCompleted={() => { }}
-                    backButtonText="Back"
-                    nextButtonText="Next"
-                    // Customize classes for clean look
-                    stepCircleContainerClassName="shadow-none border-0 bg-transparent"
-                    stepContainerClassName="hidden" // Hides visual step container completely if indicators disabled
-                    contentClassName="px-0 py-2 text-center"
-                    footerClassName="px-0 pb-0 pt-2 flex justify-center w-full"
-                    backButtonProps={{ className: "px-4 py-2 text-sm text-gray-500 hover:text-gray-800 font-medium" }}
-                    nextButtonProps={{ className: "px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-full shadow-sm hover:bg-blue-700 transition-colors ml-auto" }}
-                  >
-                    {missingSections.map((section, idx) => {
-                      const tabMap: Record<string, string> = {
-                        "Personal Information": "personal",
-                        "Education": "education",
-                        "Professional Details": "profession",
-                        "Skills & Expertise": "profession",
-                        "Availability": "availability",
-                        "Profile Photo": "overview",
-                        "Verification Documents": "verification"
-                      };
-                      const targetTab = tabMap[section] || "overview"; // simpler fallback
-
-                      return (
-                        <Step key={idx}>
-                          <div className="flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
-                            {/* Reduced text size for mobile */}
-                            <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  <div className="bg-white rounded-lg border border-amber-100 p-4">
+                    <p className="text-xs text-center text-gray-500 mb-3">
+                      Profile Completion Status:
+                    </p>
+                    <ul className="space-y-2">
+                      {[
+                        "Personal Information",
+                        "Education",
+                        "Professional Details",
+                        "Skills & Expertise",
+                        "Availability",
+                        "Profile Photo",
+                        "Verification Documents"
+                      ].map((section, idx) => {
+                        const isMissing = missingSections.includes(section);
+                        return (
+                          <li key={idx} className="flex items-center gap-2 text-sm px-2">
+                            {isMissing ? (
+                              <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            )}
+                            <span className={isMissing ? "text-amber-700 font-medium" : "text-green-700 font-medium"}>
                               {section}
-                            </h3>
-                            <p className="text-xs text-gray-500 mb-4 max-w-[250px] mx-auto">
-                              This section is required for verification.
-                            </p>
-
-                            <button
-                              onClick={() => onNavigate?.(targetTab)}
-                              className="inline-flex items-center justify-center rounded-lg bg-white border border-gray-200 px-5 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-all shadow-sm w-full sm:w-auto"
-                            >
-                              Go to {section} &rarr;
-                            </button>
-                          </div>
-                        </Step>
-                      );
-                    })}
-                  </Stepper>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
               )
             )}
@@ -380,12 +360,6 @@ const ExpertProfileHeader = memo(({ onNavigate, onRefresh }: { onNavigate?: (tab
             <p className="text-sm text-green-600/90 mb-4">
               Your profile is complete and pending verification.
             </p>
-            <button
-              onClick={() => navigate("/dashboard/profile")}
-              className="w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-            >
-              View Profile Settings
-            </button>
           </div>
         )}
       </div>

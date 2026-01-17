@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from '../lib/axios';
 import { toast } from "sonner";
-import { PrimaryButton } from '../pages/ExpertDashboard'; // Removed Card import
+import { PrimaryButton } from '../pages/ExpertDashboard';
 import { useAuth } from '../context/AuthContext';
 import { Country, State, City } from 'country-state-city';
+import { AlertCircle } from 'lucide-react';
 
-// Simple Input component to replace the Card-based one if needed, or we adapt layout
 const FormInput = ({ label, value, onChange, placeholder, type = "text", error, maxLength }: any) => (
     <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -43,12 +43,16 @@ const FormSelect = ({ label, value, onChange, options, disabled, error, placehol
     </div>
 );
 
-const PersonalInfo = () => {
+interface PersonalInfoProps {
+    onUpdate?: () => void;
+    profileData?: any;
+    isMissing?: boolean;
+}
+
+const PersonalInfo = ({ onUpdate, profileData, isMissing }: PersonalInfoProps) => {
     const { user } = useAuth();
     const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
 
-    // We store names in the profile for backend compatibility
-    // But we need codes for the library to work properly for dependent fields
     const [countryCode, setCountryCode] = useState("");
     const [stateCode, setStateCode] = useState("");
 
@@ -69,7 +73,7 @@ const PersonalInfo = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const allCountries = useMemo(() => Country.getAllCountries().map(c => ({
-        value: c.isoCode, // We use Code for value to drive logic, but will save Name
+        value: c.isoCode,
         label: c.name,
         name: c.name
     })), []);
@@ -86,7 +90,7 @@ const PersonalInfo = () => {
     const allCities = useMemo(() => {
         if (!countryCode || !stateCode) return [];
         return City.getCitiesOfState(countryCode, stateCode).map(c => ({
-            value: c.name, // City doesn't always have a useful code for next steps, so name is fine
+            value: c.name,
             label: c.name
         }));
     }, [countryCode, stateCode]);
@@ -95,7 +99,6 @@ const PersonalInfo = () => {
     const setPersonalField = (field: string, value: string) => {
         setProfile((p) => ({ ...p, personal: { ...p.personal, [field]: value } }));
 
-        // Clear error when user types
         if (errors[field]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
@@ -105,12 +108,10 @@ const PersonalInfo = () => {
         }
     };
 
-    // Special handler for Location Change to sync Codes + Names
     const handleCountryChange = (isoCode: string) => {
         const countryObj = allCountries.find(c => c.value === isoCode);
         setCountryCode(isoCode);
         setPersonalField("country", countryObj ? countryObj.name : "");
-        // Reset sub-fields
         setPersonalField("state", "");
         setPersonalField("city", "");
         setStateCode("");
@@ -123,7 +124,6 @@ const PersonalInfo = () => {
         setPersonalField("city", "");
     };
 
-    // Effect: Recover codes from names on initial load
     useEffect(() => {
         if (profile.personal.country && !countryCode) {
             const c = allCountries.find(x => x.name === profile.personal.country);
@@ -139,17 +139,14 @@ const PersonalInfo = () => {
     }, [countryCode, profile.personal.state, stateCode]);
 
 
-    // Validation Logic
     const validate = () => {
         const newErrors: Record<string, string> = {};
         const p = profile.personal;
 
-        // Mobile: 10 digits only
         const mobileRegex = /^\d{10}$/;
         if (!p.phone) newErrors.phone = "Phone number is required";
         else if (!mobileRegex.test(p.phone)) newErrors.phone = "Enter a valid 10-digit mobile number";
 
-        // DOB: 18+ years
         if (!p.dob) {
             newErrors.dob = "Date of Birth is required";
         } else {
@@ -163,7 +160,6 @@ const PersonalInfo = () => {
             if (age < 18) newErrors.dob = "You must be at least 18 years old";
         }
 
-        // Required fields
         if (!p.name.trim()) newErrors.name = "Full Name is required";
         if (!p.gender) newErrors.gender = "Gender is required";
         if (!p.country) newErrors.country = "Country is required";
@@ -176,10 +172,18 @@ const PersonalInfo = () => {
     };
 
 
-    // -------------------- GET personal info --------------------
     useEffect(() => {
+        setLoading(true);
+        // Preference: Use profileData passed from parent if available to avoid double fetch
+        // But for editing we usually want fresh data, so we stick to fetch or merge.
+        // Let's merge for now if profileData matches structure, else fetch.
+
         const fetchData = async () => {
             try {
+                // If we have profileData and it has personal info, use it directly?
+                // The parent fetches /api/expert/profile which usually has limited info.
+                // We'll fetch the specific personal info endpoint to be safe.
+
                 const response = await axios.get(`/api/expert/personalinfo`);
                 if (response.data.success && response.data.data) {
                     const data = response.data.data;
@@ -199,7 +203,6 @@ const PersonalInfo = () => {
                     setProfile(prev => ({ ...prev, personal: { ...prev.personal, name: user.name || "" } }));
                 }
 
-                // Fetch Categories
                 const catRes = await axios.get("/api/categories");
                 if (Array.isArray(catRes.data)) {
                     const options = catRes.data.map((cat: any) => ({
@@ -217,7 +220,6 @@ const PersonalInfo = () => {
         fetchData();
     }, [user]);
 
-    // -------------------- Save (PUT / upsert) --------------------
     const savePersonal = async () => {
         if (!validate()) {
             toast.error("Please fix the validation errors");
@@ -244,7 +246,7 @@ const PersonalInfo = () => {
 
             if (response.data.success) {
                 toast.success("Personal info updated successfully!");
-                // Force reload/update of header logic if needed but simple toast is mostly fine
+                if (onUpdate) onUpdate();
             } else {
                 toast.error("Failed to update personal info");
             }
@@ -262,16 +264,18 @@ const PersonalInfo = () => {
     );
 
     return (
-        <div className="animate-in fade-in duration-500">
+        <div className="h-full">
             <div className="flex items-start justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        Personal Information
+                        {isMissing && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Action Required</span>}
+                    </h3>
                     <p className="text-sm text-gray-500 mt-1">Update your basic details and location</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column */}
                 <div className="space-y-4">
                     <FormInput
                         label="Full Name"
@@ -286,7 +290,6 @@ const PersonalInfo = () => {
                         placeholder="10 digit mobile number"
                         value={profile.personal?.phone || ""}
                         onChange={(v: string) => {
-                            // Only allow numbers
                             if (v === "" || /^[0-9\b]+$/.test(v)) {
                                 setPersonalField("phone", v);
                             }
@@ -295,7 +298,6 @@ const PersonalInfo = () => {
                         error={errors.phone}
                     />
 
-                    {/* Gender Select Box */}
                     <FormSelect
                         label="Gender"
                         value={profile.personal?.gender || ""}
@@ -314,11 +316,10 @@ const PersonalInfo = () => {
                     />
                 </div>
 
-                {/* Right Column */}
                 <div className="space-y-4">
                     <FormSelect
                         label="Country"
-                        value={countryCode} // Controlled by code
+                        value={countryCode}
                         onChange={(v: string) => handleCountryChange(v)}
                         options={allCountries}
                         placeholder="Select Country"
@@ -337,7 +338,7 @@ const PersonalInfo = () => {
 
                     <FormSelect
                         label="City"
-                        value={profile.personal.city} // Cities use name directly usually
+                        value={profile.personal.city}
                         onChange={(v: string) => setPersonalField("city", v)}
                         options={allCities}
                         disabled={!stateCode}
